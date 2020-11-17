@@ -7,7 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/phanirithvij/fate/f8/entity"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -17,18 +16,19 @@ import (
 type User struct {
 	gorm.Model
 	entity.BaseEntity `gorm:"embedded"`
-	Username          string `gorm:"unique;not null" json:"username"`
-	Name              string `json:"name" gorm:"unique;not null"`
-	// Emails            []Email `json:"emails"`
-	Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
+	Username          string  `gorm:"unique;not null" json:"username"`
+	Name              string  `json:"name" gorm:"unique;not null"`
+	Emails            []Email `json:"emails" gorm:"polymorphic:User"`
+	// Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
 
 // Email email for the user
-// type Email struct {
-// 	gorm.Model
-// 	Email  string `gorm:"uniqueindex:compositeindex" json:"email"`
-// 	UserID string `gorm:"uniqueindex:compositeindex"`
-// }
+type Email struct {
+	gorm.Model
+	Email    string `gorm:"uniqueindex:user_email_idx" json:"email"`
+	UserID   string `gorm:"uniqueindex:user_email_idx"`
+	UserType string
+}
 
 func (u User) String() string {
 	x, err := json.MarshalIndent(u, "", " ")
@@ -84,8 +84,8 @@ func main() {
 
 	user := new(User)
 	user.BaseEntity = *entity.NewBase()
-	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
-	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
+	user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
+	// user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
 	user.Username = "phano" + strconv.FormatInt(time.Now().Unix(), 10)
 	err = user.Register()
@@ -108,8 +108,8 @@ func AutoMigrate() (err error) {
 	if err != nil {
 		return err
 	}
-	// err = db.AutoMigrate(u, &Email{})
-	err = db.AutoMigrate(u)
+	err = db.AutoMigrate(u, &Email{})
+	// err = db.AutoMigrate(u)
 	// db.Model(u).
 	return err
 }

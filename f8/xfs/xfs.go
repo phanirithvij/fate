@@ -9,18 +9,19 @@ import (
 
 // Bucket is equivalient to a filesystem with a name
 type Bucket struct {
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	XFileSystem
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
+	XFileSystem `gorm:"embedded"`
 	/*
 		Bucket ID will not be unique as evey entity has a `default` bucket
 		Entity ID and bucket ID together will be unique
 	*/
 	// https://stackoverflow.com/a/63409572/8608146
 	// https://gorm.io/docs/composite_primary_key.html
-	ID       string `gorm:"uniqueIndex:compositeindex;primaryKey"`
-	EntityID string `gorm:"uniqueIndex:compositeindex"`
+	ID         string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
+	EntityID   string `gorm:"uniqueIndex:buk_ent_idx"`
+	EntityType string
 }
 
 // NewBucket returns a new bucket, if id is empty ID is default
@@ -47,7 +48,7 @@ func (b *Bucket) String() string {
 
 // XFileSystem a simple filesystem implementation
 type XFileSystem struct {
-	FileDirs []FileDir `gorm:"foreignKey:BucketID"`
+	FileDirs []FileDir `gorm:"polymorphic:Bucket"`
 }
 
 // copied from os.FileInfo interface{}
@@ -57,12 +58,13 @@ type FileDir struct {
 	gorm.Model
 	Name string `gorm:"primarykey"` // base name of the file
 	// TODO: Once a file or dir is created it is our job to populate these fields
-	Size     int64       // length in bytes for regular files; system-dependent for others
-	Mode     os.FileMode // file mode bits
-	ModTime  time.Time   // modification time
-	IsDir    bool        // abbreviation for Mode.IsDir
-	BucketID string      `gorm:"primarykey"`
-	info     os.FileInfo `gorm:"-"`
+	Size       int64       // length in bytes for regular files; system-dependent for others
+	Mode       os.FileMode // file mode bits
+	ModTime    time.Time   // modification time
+	IsDir      bool        // abbreviation for Mode.IsDir
+	BucketID   string      `gorm:"primarykey"`
+	BucketType string
+	info       os.FileInfo `gorm:"-"`
 }
 
 // NewFile retuns a new file
