@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/lib/pq"
@@ -14,13 +15,10 @@ import (
 
 // User a simple user struct
 type User struct {
-	entity.BaseEntity `gorm:"embedded"`
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
-	DeletedAt         gorm.DeletedAt `gorm:"index"`
-	Username          string         `gorm:"primarykey,not null" json:"username"`
-	Name              string         `json:"name"`
-	Emails            pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
+	*entity.BaseEntity `gorm:"embedded"`
+	Username           string         `gorm:"primarykey;not null" json:"username"`
+	Name               string         `json:"name"`
+	Emails             pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
 
 func (u User) String() string {
@@ -62,6 +60,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	db.Debug()
 
 	err = AutoMigrate()
 	if err != nil {
@@ -70,9 +69,10 @@ func main() {
 	}
 
 	user := new(User)
-	user.BaseEntity = *entity.NewBase()
+	user.BaseEntity = entity.NewBase()
 	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
+	user.Username = "phano" + strconv.FormatInt(time.Now().Unix(), 10)
 	err = user.Register()
 	if err != nil {
 		log.Fatal(err)
@@ -81,16 +81,18 @@ func main() {
 
 // Register a user
 func (u User) Register() error {
-	// db.DryRun = true
 	tx := db.Debug().Create(&u)
 	fmt.Println(u)
-	// fmt.Println(tx.Statement.)
 	return tx.Error
 }
 
 // AutoMigrate the user's schema
-func AutoMigrate() error {
-	u := &User{BaseEntity: *entity.NewBase()}
-	u.BaseEntity.AutoMigrate(db)
-	return db.AutoMigrate(u)
+func AutoMigrate() (err error) {
+	u := &User{}
+	err = db.Debug().AutoMigrate(u)
+	if err != nil {
+		return err
+	}
+	err = u.BaseEntity.AutoMigrate(db)
+	return err
 }
