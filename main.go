@@ -15,11 +15,20 @@ import (
 
 // User a simple user struct
 type User struct {
-	*entity.BaseEntity `gorm:"embedded"`
-	Username           string         `gorm:"primarykey;not null" json:"username"`
-	Name               string         `json:"name"`
-	Emails             pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
+	gorm.Model
+	entity.BaseEntity `gorm:"embedded"`
+	Username          string `gorm:"unique;not null" json:"username"`
+	Name              string `json:"name" gorm:"unique;not null"`
+	// Emails            []Email `json:"emails"`
+	Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
+
+// Email email for the user
+// type Email struct {
+// 	gorm.Model
+// 	Email  string `gorm:"uniqueindex:compositeindex" json:"email"`
+// 	UserID string `gorm:"uniqueindex:compositeindex"`
+// }
 
 func (u User) String() string {
 	x, err := json.MarshalIndent(u, "", " ")
@@ -60,7 +69,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	db.Debug()
+	// TODO debug flag
+	if true {
+		db = db.Debug()
+	}
+	// Not supported error
+	// db.DryRun = true
 
 	err = AutoMigrate()
 	if err != nil {
@@ -69,7 +83,8 @@ func main() {
 	}
 
 	user := new(User)
-	user.BaseEntity = entity.NewBase()
+	user.BaseEntity = *entity.NewBase()
+	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
 	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
 	user.Username = "phano" + strconv.FormatInt(time.Now().Unix(), 10)
@@ -81,7 +96,7 @@ func main() {
 
 // Register a user
 func (u User) Register() error {
-	tx := db.Debug().Create(&u)
+	tx := db.Create(&u)
 	fmt.Println(u)
 	return tx.Error
 }
@@ -89,10 +104,12 @@ func (u User) Register() error {
 // AutoMigrate the user's schema
 func AutoMigrate() (err error) {
 	u := &User{}
-	err = db.Debug().AutoMigrate(u)
+	err = entity.AutoMigrate(db)
 	if err != nil {
 		return err
 	}
-	err = u.BaseEntity.AutoMigrate(db)
+	// err = db.AutoMigrate(u, &Email{})
+	err = db.AutoMigrate(u)
+	// db.Model(u).
 	return err
 }
