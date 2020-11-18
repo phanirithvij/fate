@@ -1,4 +1,4 @@
-package xfs
+package buckets
 
 import (
 	"encoding/json"

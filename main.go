@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/phanirithvij/fate/f8"
 	"github.com/phanirithvij/fate/f8/entity"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -89,6 +90,8 @@ func main() {
 		log.Println("AutoMigrate failed")
 		log.Fatal(err)
 	}
+
+	f8.New()
 
 	user := new(User)
 	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}

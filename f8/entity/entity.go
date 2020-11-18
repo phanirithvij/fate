@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	"github.com/phanirithvij/fate/f8/xfs"
+	"github.com/phanirithvij/fate/f8/buckets"
 	"gorm.io/gorm"
 )
 
@@ -16,9 +16,9 @@ type BaseEntity struct {
 	ID string `gorm:"unique;primaryKey;not null"`
 	// https://gorm.io/docs/models.html#Field-Level-Permission
 	// would be great if this was a map but unfortunately sql no maps
-	// Buckets []*xfs.Bucket `gorm:"foreignKey:EntityID"`
-	Buckets []*xfs.Bucket `gorm:"polymorphic:Entity"`
-	// Buckets []*xfs.Bucket `gorm:"polymorphic:Entity;<-:false"`
+	// Buckets []*buckets.Bucket `gorm:"foreignKey:EntityID"`
+	Buckets []*buckets.Bucket `gorm:"polymorphic:Entity"`
+	// Buckets []*buckets.Bucket `gorm:"polymorphic:Entity;<-:false"`
 	// f8.BaseEntity `gorm:"-"`
 	db                *gorm.DB `gorm:"-"`
 	entityType        string   `gorm:"-"`
@@ -26,7 +26,7 @@ type BaseEntity struct {
 }
 
 var (
-	bucketMap map[string]*xfs.Bucket
+	bucketMap map[string]*buckets.Bucket
 )
 
 // From this vararg approach
@@ -129,7 +129,7 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 
 	ent := &BaseEntity{
 		ID:         o.id,
-		Buckets:    []*xfs.Bucket{},
+		Buckets:    []*buckets.Bucket{},
 		entityType: o.tableName,
 		db:         o.db,
 	}
@@ -159,8 +159,8 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 
 // CreateBucket creates a new bucket for the entity
 // and appends it to the entity owned bucket list
-func (e *BaseEntity) CreateBucket(bID string) (buck *xfs.Bucket) {
-	buck = xfs.NewBucket(bID, e.db)
+func (e *BaseEntity) CreateBucket(bID string) (buck *buckets.Bucket) {
+	buck = buckets.NewBucket(bID, e.db)
 	e.Buckets = append(e.Buckets, buck)
 	return buck
 }
@@ -168,14 +168,14 @@ func (e *BaseEntity) CreateBucket(bID string) (buck *xfs.Bucket) {
 // GetBucket returns a bucket with given name reading from DB
 //
 // pass an empty string to get the default bucket
-func (e *BaseEntity) GetBucket(bID string) (buck *xfs.Bucket, err error) {
+func (e *BaseEntity) GetBucket(bID string) (buck *buckets.Bucket, err error) {
 	if e.db == nil {
 		return nil, errors.New("DB was nil for some reason")
 	}
 	if bID == "" {
 		bID = e.defaultBucketName
 	}
-	buck = &xfs.Bucket{
+	buck = &buckets.Bucket{
 		ID:         bID,
 		EntityID:   e.ID,
 		EntityType: e.entityType,
@@ -204,5 +204,5 @@ func (e *BaseEntity) DeleteBucket(bID string) bool {
 //
 // Note: EntityBase will not auto migrate because it's the parent's responsibility
 func AutoMigrate(db *gorm.DB) error {
-	return xfs.AutoMigrate(db)
+	return buckets.AutoMigrate(db)
 }

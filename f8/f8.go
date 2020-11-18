@@ -2,7 +2,7 @@ package f8
 
 import "fmt"
 
-// Hello ...
-func Hello() {
+// New ...
+func New() {
 	fmt.Println("hello")
 }
