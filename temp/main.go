@@ -31,7 +31,7 @@ type BucketDDD struct {
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 	ID        string         `gorm:"unique;primaryKey"`
 	EntityID  string         `gorm:"unique;primaryKey"`
-	FileDirs  []FileDirDDD   `gorm:"foreignKey:BucketID;"`
+	FileDirs  []FileDirDDD   `gorm:"foreignKey:BucketID"`
 }
 
 // FileDirDDD ...

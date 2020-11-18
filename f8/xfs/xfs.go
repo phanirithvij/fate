@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Bucket is equivalient to a filesystem with a name
@@ -24,10 +25,10 @@ type Bucket struct {
 	// any othername fails polymorphic clause on XFileSystem
 
 	// The Name of the bucket or the bucket name
+	// Name       string `gorm:"uniqueIndex:buk_ent_idx;unique;primaryKey"`
 	ID         string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
-	Name       string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
 	EntityID   string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
-	EntityType string `gorm:"uniqueIndex:buk_ent_idx;"`
+	EntityType string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
 }
 
 // newBucket returns a new bucket, if id is empty ID is default
@@ -37,7 +38,7 @@ func newBucket(id string) *Bucket {
 	}
 	// Provision a bucket with an empty file system
 	return &Bucket{
-		Name:        id,
+		ID:          id,
 		XFileSystem: XFileSystem{FileDirs: []FileDir{}},
 	}
 }
@@ -57,12 +58,12 @@ func (b *Bucket) Exists(db *gorm.DB) bool {
 }
 
 func (b *Bucket) String() string {
-	return b.Name
+	return b.ID
 }
 
 // XFileSystem a simple filesystem implementation
 type XFileSystem struct {
-	FileDirs []FileDir `gorm:"polymorphic:Bucket"`
+	FileDirs []FileDir `gorm:"foreignKey:BucketID"`
 }
 
 // copied from os.FileInfo interface{}
@@ -104,6 +105,28 @@ func NewDir(name string) *FileDir {
 }
 
 // AutoMigrate for xfs
-func AutoMigrate(db *gorm.DB) error {
-	return db.AutoMigrate(&Bucket{}, &FileDir{})
+func AutoMigrate(db *gorm.DB) (err error) {
+	// err = db.Migrator().CreateConstraint(&Bucket{}, "name_checker")
+	// if err != nil {
+	// 	log.Println(err)
+	// 	return err
+	// }
+	err = db.AutoMigrate(&Bucket{}, &FileDir{})
+	return err
+}
+
+// BeforeCreate before creating fix the conflicts for primarykey
+func (b *Bucket) BeforeCreate(tx *gorm.DB) (err error) {
+	cols := []clause.Column{}
+	colsNames := []string{}
+	for _, field := range tx.Statement.Schema.PrimaryFields {
+		cols = append(cols, clause.Column{Name: field.DBName})
+		colsNames = append(colsNames, field.DBName)
+	}
+	tx.Statement.AddClause(clause.OnConflict{
+		Columns: cols,
+		// DoUpdates: clause.AssignmentColumns(colsNames),
+		DoNothing: true,
+	})
+	return nil
 }
