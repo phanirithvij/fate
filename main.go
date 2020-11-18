@@ -18,8 +18,9 @@ type User struct {
 	UpdatedAt          time.Time
 	DeletedAt          gorm.DeletedAt `gorm:"index"`
 	*entity.BaseEntity `gorm:"embedded"`
-	Name               string  `json:"name" gorm:"not null"`
-	Emails             []Email `json:"emails" gorm:"polymorphic:User;"`
+	Name               string `json:"name" gorm:"not null"`
+	// Emails             []Email `json:"emails" gorm:"foreignKey:UserID;"`
+	Emails []Email `json:"emails" gorm:"polymorphic:User;"`
 	// Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
 
@@ -68,6 +69,7 @@ func main() {
 		username, password, hostname, port, dbame,
 	)
 	var err error
+	// db, err = gorm.Open(sqlite.Open("sample.db"), &gorm.Config{})
 	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal(err)

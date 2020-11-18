@@ -28,7 +28,7 @@ type Bucket struct {
 	// Name       string `gorm:"uniqueIndex:buk_ent_idx;unique;primaryKey"`
 	ID         string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
 	EntityID   string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
-	EntityType string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
+	EntityType string `gorm:"primaryKey"`
 }
 
 // newBucket returns a new bucket, if id is empty ID is default
@@ -44,10 +44,8 @@ func newBucket(id string) *Bucket {
 }
 
 // NewBucket creates a new bucket for the given entity
-func NewBucket(entityID, entityType, bID string) *Bucket {
+func NewBucket(bID string) *Bucket {
 	buck := newBucket(bID)
-	buck.EntityID = entityID
-	buck.EntityType = entityType
 	return buck
 }
 
@@ -63,7 +61,8 @@ func (b *Bucket) String() string {
 
 // XFileSystem a simple filesystem implementation
 type XFileSystem struct {
-	FileDirs []FileDir `gorm:"foreignKey:BucketID"`
+	FileDirs []FileDir `gorm:"polymorphic:Bucket"`
+	// FileDirs []FileDir `gorm:"foreignKey:BucketID"`
 }
 
 // copied from os.FileInfo interface{}
@@ -105,14 +104,8 @@ func NewDir(name string) *FileDir {
 }
 
 // AutoMigrate for xfs
-func AutoMigrate(db *gorm.DB) (err error) {
-	// err = db.Migrator().CreateConstraint(&Bucket{}, "name_checker")
-	// if err != nil {
-	// 	log.Println(err)
-	// 	return err
-	// }
-	err = db.AutoMigrate(&Bucket{}, &FileDir{})
-	return err
+func AutoMigrate(db *gorm.DB) error {
+	return db.AutoMigrate(&Bucket{}, &FileDir{})
 }
 
 // BeforeCreate before creating fix the conflicts for primarykey

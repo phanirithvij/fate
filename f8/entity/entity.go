@@ -15,11 +15,9 @@ type BaseEntity struct {
 	ID string `gorm:"unique;primaryKey;not null"`
 	// https://gorm.io/docs/models.html#Field-Level-Permission
 	// would be great if this was a map but unfortunately sql no maps
-	Buckets []*xfs.Bucket `gorm:"foreignKey:EntityID"`
-	// Buckets []*xfs.Bucket `gorm:"polymorphic:Entity"`
+	// Buckets []*xfs.Bucket `gorm:"foreignKey:EntityID"`
+	Buckets []*xfs.Bucket `gorm:"polymorphic:Entity"`
 	// Buckets []*xfs.Bucket `gorm:"polymorphic:Entity;<-:false"`
-	// EntityType to pass it down
-	EntityType string `gorm:"-"`
 }
 
 // From this vararg approach
@@ -65,6 +63,7 @@ func TableName(tableName string) Option {
 //
 // Must specify this or BucketNames if using BucketCount() as buckets will be created
 // as name-0, name-1, name-2, ..., name-{count-1}
+// default is `default`
 func BucketName(bucketName string) Option {
 	return func(o *options) {
 		o.defaultBucketName = bucketName
@@ -108,12 +107,9 @@ func NewBase(opts ...Option) (*BaseEntity, error) {
 		usebNames = true
 	}
 
-	etype := o.tableName
-
 	ent := &BaseEntity{
-		ID:         o.id,
-		Buckets:    []*xfs.Bucket{},
-		EntityType: etype,
+		ID:      o.id,
+		Buckets: []*xfs.Bucket{},
 	}
 	if o.numBuckets == 0 {
 		// number of buckets was not specified
@@ -140,7 +136,7 @@ func NewBase(opts ...Option) (*BaseEntity, error) {
 // CreateBucket creates a new bucket for the entity
 // and appends it to the entity owned bucket list
 func (e *BaseEntity) CreateBucket(bID string) (buck *xfs.Bucket) {
-	buck = xfs.NewBucket(e.ID, e.EntityType, bID)
+	buck = xfs.NewBucket(bID)
 	e.Buckets = append(e.Buckets, buck)
 	return buck
 }
