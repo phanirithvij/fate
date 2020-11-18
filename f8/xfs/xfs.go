@@ -23,8 +23,9 @@ type Bucket struct {
 	// Must be named as ID because
 	// any othername fails polymorphic clause on XFileSystem
 
-	// The ID of the bucket or the bucket name
+	// The Name of the bucket or the bucket name
 	ID         string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
+	Name       string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
 	EntityID   string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
 	EntityType string `gorm:"uniqueIndex:buk_ent_idx;"`
 }
@@ -36,7 +37,7 @@ func newBucket(id string) *Bucket {
 	}
 	// Provision a bucket with an empty file system
 	return &Bucket{
-		ID:          id,
+		Name:        id,
 		XFileSystem: XFileSystem{FileDirs: []FileDir{}},
 	}
 }
@@ -56,7 +57,7 @@ func (b *Bucket) Exists(db *gorm.DB) bool {
 }
 
 func (b *Bucket) String() string {
-	return b.ID
+	return b.Name
 }
 
 // XFileSystem a simple filesystem implementation
