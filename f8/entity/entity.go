@@ -2,6 +2,7 @@ package entity
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -18,7 +19,15 @@ type BaseEntity struct {
 	// Buckets []*xfs.Bucket `gorm:"foreignKey:EntityID"`
 	Buckets []*xfs.Bucket `gorm:"polymorphic:Entity"`
 	// Buckets []*xfs.Bucket `gorm:"polymorphic:Entity;<-:false"`
+	// f8.BaseEntity `gorm:"-"`
+	db                *gorm.DB `gorm:"-"`
+	entityType        string   `gorm:"-"`
+	defaultBucketName string   `gorm:"-"`
 }
+
+var (
+	bucketMap map[string]*xfs.Bucket
+)
 
 // From this vararg approach
 // https://github.com/faiface/gui/commit/ee3366ded862f02a1a5ee4ea856a06e46bb889ee#diff-f9c3d4c5cce2eabfcf19a1c38214e739a6619bdd22b15373e34be2e3e4589247R89
@@ -31,6 +40,7 @@ type options struct {
 	defaultBucketName string
 	bucketNames       []string
 	tableName         string
+	db                *gorm.DB
 }
 
 // ID option sets the ID of the entity.
@@ -56,6 +66,13 @@ func BucketCount(numBuckets int) Option {
 func TableName(tableName string) Option {
 	return func(o *options) {
 		o.tableName = tableName
+	}
+}
+
+// DB the gorm db instance for querying the buckets database
+func DB(db *gorm.DB) Option {
+	return func(o *options) {
+		o.db = db
 	}
 }
 
@@ -88,6 +105,9 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 	for _, opt := range opts {
 		opt(&o)
 	}
+	if o.db == nil {
+		return nil, errors.New("Must pass the gorm database instance")
+	}
 	if o.id == "" {
 		o.id = uuid.New().String()
 	}
@@ -108,14 +128,18 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 	}
 
 	ent := &BaseEntity{
-		ID:      o.id,
-		Buckets: []*xfs.Bucket{},
+		ID:         o.id,
+		Buckets:    []*xfs.Bucket{},
+		entityType: o.tableName,
+		db:         o.db,
 	}
 	if o.numBuckets == 0 {
 		// number of buckets was not specified
 		// create a default bucket
 		o.numBuckets = 1
 	}
+
+	ent.defaultBucketName = o.defaultBucketName
 
 	// create initial buckets
 	for i := 0; i < o.numBuckets; i++ {
@@ -136,14 +160,49 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 // CreateBucket creates a new bucket for the entity
 // and appends it to the entity owned bucket list
 func (e *BaseEntity) CreateBucket(bID string) (buck *xfs.Bucket) {
-	buck = xfs.NewBucket(bID)
+	buck = xfs.NewBucket(bID, e.db)
 	e.Buckets = append(e.Buckets, buck)
 	return buck
 }
 
+// GetBucket returns a bucket with given name reading from DB
+//
+// pass an empty string to get the default bucket
+func (e *BaseEntity) GetBucket(bID string) (buck *xfs.Bucket, err error) {
+	if e.db == nil {
+		return nil, errors.New("DB was nil for some reason")
+	}
+	if bID == "" {
+		bID = e.defaultBucketName
+	}
+	buck = &xfs.Bucket{
+		ID:         bID,
+		EntityID:   e.ID,
+		EntityType: e.entityType,
+	}
+	buck.AttatchDB(e.db)
+
+	tx := e.db.First(buck)
+	if tx.Error != nil {
+		return nil, tx.Error
+	}
+	return buck, nil
+}
+
+// DeleteBucket deletes a bucket from the entity
+func (e *BaseEntity) DeleteBucket(bID string) bool {
+	buck, err := e.GetBucket(bID)
+	if err != nil {
+		fmt.Println("Bucket doesn't exist'")
+		return false
+	}
+	buck.Delete()
+	return true
+}
+
 // AutoMigrate auto migrations required for the database
 //
-// Note: BaseEntity will not auto migrate because it's the parent's responsibility
+// Note: EntityBase will not auto migrate because it's the parent's responsibility
 func AutoMigrate(db *gorm.DB) error {
 	return xfs.AutoMigrate(db)
 }

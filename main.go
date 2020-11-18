@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/lib/pq"
@@ -77,7 +79,7 @@ func main() {
 	}
 	// TODO debug flag
 	if true {
-		db = db.Debug()
+		// db = db.Debug()
 	}
 	// Not supported error
 	// db.DryRun = true
@@ -92,23 +94,47 @@ func main() {
 	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
 	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
-	userID := "phano"
-	// userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
+	// userID := "phano"
+	userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
 	user.BaseEntity, err = entity.Entity(
 		entity.ID(userID),
 		entity.TableName(user.TableName()),
 		entity.BucketName("default"),
 		entity.BucketCount(3),
+		entity.DB(db),
 	)
-	err = user.Register()
+	err = user.Save()
+	fmt.Println(user)
+
+	// Now manuplate the entity's file system
+
+	// get the default bucket
+	buck, err := user.GetBucket("")
 	if err != nil {
-		if perr, ok := err.(*pq.Error); ok {
-			// Here err is of type *pq.Error, you may inspect all its fields, e.g.:
-			fmt.Println("pq error:", perr.Code.Name())
-		} else {
-			log.Fatal(err)
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Println("Bucket not found")
 		}
 	}
+	fmt.Println(buck)
+	fmt.Println("bucket exists?", buck.Exists())
+	ok := user.DeleteBucket(buck.ID)
+	if ok {
+		fmt.Println("Deleted successfully")
+	}
+	ok = buck.Delete()
+	if ok {
+		fmt.Println("Deleted successfully twice??")
+	}
+	fmt.Println("bucket exists?", buck.Exists())
+
+	// if err != nil {
+	// 	if perr, ok := err.(*pq.Error); ok {
+	// 		// Here err is of type *pq.Error, you may inspect all its fields, e.g.:
+	// 		fmt.Println("pq error:", perr.Code.Name())
+	// 	} else {
+	// 		log.Fatal(err)
+	// 	}
+	// }
 }
 
 // TableName for the user
@@ -116,8 +142,8 @@ func (u User) TableName() string {
 	return "users"
 }
 
-// Register a user
-func (u *User) Register() error {
+// Save a user
+func (u *User) Save() error {
 	tx := db.Create(&u)
 	return tx.Error
 }

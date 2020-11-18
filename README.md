@@ -35,6 +35,13 @@ f8
 - Using [Polymorphic](https://gorm.io/docs/has_many.html#Polymorphism-Association) for the sql relations instead of foreignKey because there's some bugs with foreignKey schema generation in gorm (In my schema)
   - And in v2 of gorm the `db.Model(&model).AddForeignKey` method was removed
 
+## TODO
+
+- [ ] Make gorm an internal dependency
+  - [ ] i.e. don't force developer to use gorm
+  - [ ] If they are using they can provide the gorm.DB instance
+  - [ ] If not we will point them to the default database
+
 # FAQ
 
 ## Why f8?
