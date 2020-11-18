@@ -80,8 +80,8 @@ func BucketNames(bucketNames []string) Option {
 	}
 }
 
-// NewBase a new base
-func NewBase(opts ...Option) (*BaseEntity, error) {
+// Entity a new base entity
+func Entity(opts ...Option) (*BaseEntity, error) {
 	o := options{
 		defaultBucketName: "default",
 	}

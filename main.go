@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
+	"github.com/lib/pq"
 	"github.com/phanirithvij/fate/f8/entity"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -20,8 +20,8 @@ type User struct {
 	*entity.BaseEntity `gorm:"embedded"`
 	Name               string `json:"name" gorm:"not null"`
 	// Emails             []Email `json:"emails" gorm:"foreignKey:UserID;"`
-	Emails []Email `json:"emails" gorm:"polymorphic:User;"`
-	// Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
+	// Emails []Email `json:"emails" gorm:"polymorphic:User;"`
+	Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
 
 // TODO Consider https://github.com/go-gorm/datatypes for metadata or details
@@ -64,6 +64,7 @@ const (
 
 // Main entrypoint for hacky development tests
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	dsn := fmt.Sprintf(
 		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
 		username, password, hostname, port, dbame,
@@ -88,20 +89,25 @@ func main() {
 	}
 
 	user := new(User)
-	user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
-	userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
-	user.BaseEntity, err = entity.NewBase(
+	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
+	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
+	user.Name = "Phano"
+	userID := "phano"
+	// userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
+	user.BaseEntity, err = entity.Entity(
 		entity.ID(userID),
 		entity.TableName(user.TableName()),
 		entity.BucketName("default"),
 		entity.BucketCount(3),
 	)
-	// user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
-	user.Name = "Phano"
 	err = user.Register()
 	if err != nil {
-		log.Println(err)
-		log.Fatal(err)
+		if perr, ok := err.(*pq.Error); ok {
+			// Here err is of type *pq.Error, you may inspect all its fields, e.g.:
+			fmt.Println("pq error:", perr.Code.Name())
+		} else {
+			log.Fatal(err)
+		}
 	}
 }
 
@@ -111,9 +117,8 @@ func (u User) TableName() string {
 }
 
 // Register a user
-func (u User) Register() error {
+func (u *User) Register() error {
 	tx := db.Create(&u)
-	fmt.Println(u)
 	return tx.Error
 }
 
@@ -124,7 +129,7 @@ func AutoMigrate() (err error) {
 	if err != nil {
 		return err
 	}
-	err = db.AutoMigrate(u, &Email{})
-	// err = db.AutoMigrate(u)
+	err = db.AutoMigrate(u)
+	// err = db.AutoMigrate(u, &Email{})
 	return err
 }
