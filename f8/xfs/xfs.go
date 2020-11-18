@@ -19,13 +19,18 @@ type Bucket struct {
 	*/
 	// https://stackoverflow.com/a/63409572/8608146
 	// https://gorm.io/docs/composite_primary_key.html
+
+	// Must be named as ID because
+	// any othername fails polymorphic clause on XFileSystem
+
+	// The ID of the bucket or the bucket name
 	ID         string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
-	EntityID   string `gorm:"uniqueIndex:buk_ent_idx"`
-	EntityType string
+	EntityID   string `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
+	EntityType string `gorm:"uniqueIndex:buk_ent_idx;"`
 }
 
-// NewBucket returns a new bucket, if id is empty ID is default
-func NewBucket(id string) *Bucket {
+// newBucket returns a new bucket, if id is empty ID is default
+func newBucket(id string) *Bucket {
 	if id == "" {
 		id = "default"
 	}
@@ -34,6 +39,14 @@ func NewBucket(id string) *Bucket {
 		ID:          id,
 		XFileSystem: XFileSystem{FileDirs: []FileDir{}},
 	}
+}
+
+// NewBucket creates a new bucket for the given entity
+func NewBucket(entityID, entityType, bID string) *Bucket {
+	buck := newBucket(bID)
+	buck.EntityID = entityID
+	buck.EntityType = entityType
+	return buck
 }
 
 // Exists checks if the bucket already exists
@@ -56,8 +69,8 @@ type XFileSystem struct {
 // FileDir a file or directory
 type FileDir struct {
 	gorm.Model
-	Name string `gorm:"primarykey"` // base name of the file
 	// TODO: Once a file or dir is created it is our job to populate these fields
+	Name       string      `gorm:"primarykey"` // base name of the file
 	Size       int64       // length in bytes for regular files; system-dependent for others
 	Mode       os.FileMode // file mode bits
 	ModTime    time.Time   // modification time

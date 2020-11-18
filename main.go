@@ -14,13 +14,16 @@ import (
 
 // User a simple user struct
 type User struct {
-	gorm.Model
-	entity.BaseEntity `gorm:"embedded"`
-	Username          string  `gorm:"unique;not null" json:"username"`
-	Name              string  `json:"name" gorm:"unique;not null"`
-	Emails            []Email `json:"emails" gorm:"polymorphic:User"`
+	CreatedAt          time.Time
+	UpdatedAt          time.Time
+	DeletedAt          gorm.DeletedAt `gorm:"index"`
+	*entity.BaseEntity `gorm:"embedded"`
+	Name               string  `json:"name" gorm:"not null"`
+	Emails             []Email `json:"emails" gorm:"polymorphic:User;"`
 	// Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
+
+// TODO Consider https://github.com/go-gorm/datatypes for metadata or details
 
 // Email email for the user
 type Email struct {
@@ -83,15 +86,26 @@ func main() {
 	}
 
 	user := new(User)
-	user.BaseEntity = *entity.NewBase()
 	user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
+	userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
+	user.BaseEntity, err = entity.NewBase(
+		entity.ID(userID),
+		entity.TableName(user.TableName()),
+		entity.BucketName("default"),
+		entity.BucketCount(3),
+	)
 	// user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
-	user.Username = "phano" + strconv.FormatInt(time.Now().Unix(), 10)
 	err = user.Register()
 	if err != nil {
+		log.Println(err)
 		log.Fatal(err)
 	}
+}
+
+// TableName for the user
+func (u User) TableName() string {
+	return "users"
 }
 
 // Register a user
@@ -110,6 +124,5 @@ func AutoMigrate() (err error) {
 	}
 	err = db.AutoMigrate(u, &Email{})
 	// err = db.AutoMigrate(u)
-	// db.Model(u).
 	return err
 }
