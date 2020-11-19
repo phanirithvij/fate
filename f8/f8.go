@@ -35,8 +35,6 @@ const (
 // StorageConfig configuration for the storage
 type StorageConfig struct {
 	StorageDir string
-	// DatabaseMode the buckets will use this to store their data
-	DatabaseMode DBKind
 	// DB the underlying gorm database instance
 	//
 	// This instance can be used if needed externally
@@ -57,8 +55,10 @@ type DBConfig struct {
 	// Postgres port default 5432
 	PGport int
 	// Sqlite database file path default f8.db
-	LitePath   string
-	GormConfig gorm.Config
+	LitePath string
+	// DatabaseMode the buckets will use this to store their data
+	DatabaseMode DBKind
+	GormConfig   *gorm.Config
 }
 
 // Option is a functional option to the entity constructor New.
@@ -67,7 +67,6 @@ type options struct {
 	appName    string
 	db         *gorm.DB
 	storageDir string
-	dbKind     DBKind
 	dbConfig   *DBConfig
 }
 
@@ -77,15 +76,6 @@ type options struct {
 func DB(db *gorm.DB) Option {
 	return func(o *options) {
 		o.db = db
-	}
-}
-
-// SetDBKind default is sqlite
-//
-// The dabase used will be f8.db
-func SetDBKind(kind DBKind) Option {
-	return func(o *options) {
-		o.dbKind = kind
 	}
 }
 
@@ -121,8 +111,12 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 	}
 	log.Println("Initializing grom database ...")
 	conf := s.DBConfig
+	if conf == nil {
+		log.Println("Warning: Config was null")
+		return nil
+	}
 	log.Println("Config is", conf)
-	switch s.DatabaseMode {
+	switch conf.DatabaseMode {
 	case PgSQL:
 		var err error
 		if conf.PGdbname == "" {
@@ -158,7 +152,7 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 			conf.PGport,
 			conf.PGdbname,
 		)
-		db, err := gorm.Open(postgres.Open(dsn), &conf.GormConfig)
+		db, err := gorm.Open(postgres.Open(dsn), conf.GormConfig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -167,7 +161,7 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 	case Sqlite:
 		log.Println("Initializing sqlite database ...")
 		var err error
-		db, err := gorm.Open(sqlite.Open(s.DBConfig.LitePath), &conf.GormConfig)
+		db, err := gorm.Open(sqlite.Open(s.DBConfig.LitePath), conf.GormConfig)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -176,7 +170,7 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 		return db
 
 	default:
-		log.Println("Unknown database requested", s.DatabaseMode)
+		log.Println("Unknown database requested", conf.DatabaseMode)
 		return nil
 	}
 
@@ -186,9 +180,9 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 func New(opts ...Option) (s *StorageConfig, err error) {
 	o := options{
 		appName: "f8",
-		dbKind:  Sqlite,
 		dbConfig: &DBConfig{
-			LitePath: "f8.db",
+			LitePath:     "f8.db",
+			DatabaseMode: Sqlite,
 		},
 	}
 	for _, opt := range opts {
@@ -220,9 +214,8 @@ func New(opts ...Option) (s *StorageConfig, err error) {
 	log.Println("The storage directory is", o.storageDir)
 
 	s = &StorageConfig{
-		StorageDir:   o.storageDir,
-		DBConfig:     o.dbConfig,
-		DatabaseMode: o.dbKind,
+		StorageDir: o.storageDir,
+		DBConfig:   o.dbConfig,
 	}
 
 	s.InitDB(s.DB)

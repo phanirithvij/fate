@@ -60,7 +60,7 @@ const (
 	username = "postgres"
 	password = "522191"
 	hostname = "localhost"
-	port     = "5433"
+	port     = 5433
 	dbame    = "f8"
 	// port     = "5432"
 )
@@ -69,15 +69,27 @@ const (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	storage, err := f8.New()
+	storage, err := f8.New(
+		f8.SetDBConfig(&f8.DBConfig{
+			DatabaseMode: f8.PgSQL,
+			PGusername:   username,
+			PGpassword:   password,
+			PGhostname:   hostname,
+			PGport:       port,
+			PGdbname:     dbame,
+			GormConfig:   &gorm.Config{},
+		}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// use the instance ourselves
 	db = storage.DB
 	if storage.DB == nil {
 		log.Fatal("DB could not be initialized")
 	}
+
 	// TODO debug flag
 	if true {
 		// db = db.Debug()
