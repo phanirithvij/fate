@@ -7,11 +7,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/lib/pq"
 	"github.com/phanirithvij/fate/f8"
 	"github.com/phanirithvij/fate/f8/buckets"
 	"github.com/phanirithvij/fate/f8/entity"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -24,8 +22,8 @@ type User struct {
 	*entity.BaseEntity `gorm:"embedded"`
 	Name               string `json:"name" gorm:"not null"`
 	// Emails             []Email `json:"emails" gorm:"foreignKey:UserID;"`
-	// Emails []Email `json:"emails" gorm:"polymorphic:User;"`
-	Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
+	Emails []Email `json:"emails" gorm:"polymorphic:User;"`
+	// Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
 
 // TODO Consider https://github.com/go-gorm/datatypes for metadata or details
@@ -62,46 +60,45 @@ const (
 	password = "522191"
 	hostname = "localhost"
 	port     = "5433"
+	dbame    = "f8"
 	// port     = "5432"
-	dbame = "gorm"
 )
 
 // Main entrypoint for hacky development tests
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	dsn := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		username, password, hostname, port, dbame,
-	)
-	var err error
-	// db, err = gorm.Open(sqlite.Open("sample.db"), &gorm.Config{})
-	db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+
+	storage, err := f8.New()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	db = storage.DB
+	if storage.DB == nil {
+		log.Fatal("DB could not be initialized")
+	}
 	// TODO debug flag
 	if true {
-		// db = db.Debug()
+		db = db.Debug()
 	}
+
 	// Not supported error
 	// db.DryRun = true
-
 	err = AutoMigrate()
 	if err != nil {
 		log.Println("AutoMigrate failed")
 		log.Fatal(err)
 	}
 
-	f8.New()
-
 	user := new(User)
-	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
-	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
+	user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
+	// user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
 	userID := "phano"
 	// userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
 	user.BaseEntity, err = entity.Entity(
 		entity.ID(userID),
+		entity.StorageConfig(storage),
 		entity.TableName(user.TableName()),
 		entity.BucketName("newDefault"),
 		// entity.BucketName(""),
@@ -192,7 +189,7 @@ func AutoMigrate() (err error) {
 	if err != nil {
 		return err
 	}
-	err = db.AutoMigrate(u)
-	// err = db.AutoMigrate(u, &Email{})
+	// err = db.AutoMigrate(u)
+	err = db.AutoMigrate(u, &Email{})
 	return err
 }

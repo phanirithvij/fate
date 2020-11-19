@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
+	"github.com/phanirithvij/fate/f8"
 	"github.com/phanirithvij/fate/f8/buckets"
 	"gorm.io/gorm"
 )
@@ -24,6 +25,7 @@ type BaseEntity struct {
 	db                *gorm.DB `gorm:"-"`
 	entityType        string   `gorm:"-"`
 	defaultBucketName string   `gorm:"-"`
+	storage           *f8.StorageConfig
 }
 
 var (
@@ -45,6 +47,7 @@ type options struct {
 	bucketNames       []string
 	tableName         string
 	db                *gorm.DB
+	storage           *f8.StorageConfig
 }
 
 // ID option sets the ID of the entity.
@@ -62,6 +65,13 @@ func ID(id string) Option {
 func BucketCount(numBuckets int) Option {
 	return func(o *options) {
 		o.numBuckets = numBuckets
+	}
+}
+
+// StorageConfig option sets the num of buckets initially
+func StorageConfig(storage *f8.StorageConfig) Option {
+	return func(o *options) {
+		o.storage = storage
 	}
 }
 
@@ -111,6 +121,9 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 	}
 	if o.db == nil {
 		return nil, errors.New("Must pass the gorm database instance")
+	}
+	if o.storage == nil {
+		return nil, errors.New("Must pass a storage instance")
 	}
 	if o.id == "" {
 		o.id = uuid.New().String()
@@ -225,25 +238,6 @@ func (e *BaseEntity) OverwriteBuckets() {
 			EntityBucketMap[e.ID][b.ID] = b
 		}
 	}
-	// for mapID := range EntityBucketMap[e.ID] {
-	// 	// if updated bucket id is not found in the map
-	// 	inList := true
-	// 	for _, b := range e.Buckets {
-	// 		if _, ok := EntityBucketMap[e.ID][b.ID]; ok {
-	// 			// new bucket already exists in map no need to loop
-	// 			inList = true
-	// 			break
-	// 		}
-	// 		// overwrite don't care if it exists or not
-	// 		EntityBucketMap[e.ID][b.ID] = b
-	// 		// if mapID is b.ID them mapID exists in
-	// 		inList = mapID == b.ID
-	// 	}
-	// 	// not found in buckets list so remove it from the map
-	// 	if !inList {
-	// 		delete(EntityBucketMap[e.ID], mapID)
-	// 	}
-	// }
 }
 
 // CreateBucket creates a new bucket for the entity

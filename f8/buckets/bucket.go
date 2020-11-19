@@ -24,14 +24,15 @@ type XFileSystem struct {
 type FileDir struct {
 	gorm.Model
 	// TODO: Once a file or dir is created it is our job to populate these fields
-	Name       string      `gorm:"primarykey"` // base name of the file
+	Name       string      // base name of the file
+	Path       string      `gorm:"primarykey"` // absolute path of the file
 	Size       int64       // length in bytes for regular files; system-dependent for others
 	Mode       os.FileMode // file mode bits
 	ModTime    time.Time   // modification time
 	IsDir      bool        // abbreviation for Mode.IsDir
 	BucketID   string      `gorm:"primarykey"`
 	BucketType string
-	info       os.FileInfo `gorm:"-"`
+	*os.File   `gorm:"-"`
 }
 
 // Bucket is equivalient to a filesystem with a name
@@ -164,25 +165,43 @@ func CleanupBuckets(db *gorm.DB) bool {
 }
 
 // NewFile retuns a new file
-func NewFile(name string) *FileDir {
+func NewFile(name string) (*FileDir, error) {
 	if name == "" {
-		return nil
+		return nil, errors.New("FileName was empty")
 	}
-	return &FileDir{
+	fdir := &FileDir{
 		Name:  name,
 		IsDir: false,
 	}
+
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_RDONLY, os.ModePerm)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	return fdir, nil
 }
 
 // NewDir returns a new directory
-func NewDir(name string) *FileDir {
+func NewDir(name string) (*FileDir, error) {
 	if name == "" {
-		return nil
+		return nil, errors.New("Directory name was empty")
 	}
-	return &FileDir{
+	fdir := &FileDir{
 		Name:  name,
 		IsDir: true,
 	}
+	err := os.MkdirAll(name, 0766)
+	if err != nil {
+		return nil, err
+	}
+	return fdir, nil
+}
+
+// Move the file to a new location
+func (f *FileDir) Move(dest string) (bool, error) {
+	return false, errors.New("Not implemented")
 }
 
 // AutoMigrate for xfs
