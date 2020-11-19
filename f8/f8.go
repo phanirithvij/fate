@@ -2,7 +2,6 @@ package f8
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -185,9 +184,8 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 // New retuns a new f8 storage object
 func New(opts ...Option) (s *StorageConfig, err error) {
 	o := options{
-		storageDir: "storage",
-		appName:    "f8",
-		dbKind:     Sqlite,
+		appName: "f8",
+		dbKind:  Sqlite,
 		dbConfig: &DBConfig{
 			LitePath: "f8.db",
 		},
@@ -197,22 +195,20 @@ func New(opts ...Option) (s *StorageConfig, err error) {
 	}
 
 	if o.storageDir == "" {
-		return nil, errors.New("Storage directory is empty")
-	}
-
-	if !filepath.IsAbs(o.storageDir) {
-		log.Println(relativeWarn)
-		o.storageDir, err = filepath.Abs(o.storageDir)
-		if err != nil {
-			log.Println("Failed to get the absolute path of the storage directory")
-			return nil, err
-		}
-	}
-
-	if o.storageDir == "" {
+		// Default storage directory
 		// log.Println(os.UserConfigDir())
 		appConfg := configdir.New(o.appName, "f8-storage")
 		o.storageDir = appConfg.QueryFolders(configdir.Global)[0].Path
+	} else {
+		// storage directory was specified
+		if !filepath.IsAbs(o.storageDir) {
+			log.Println(relativeWarn)
+			o.storageDir, err = filepath.Abs(o.storageDir)
+			if err != nil {
+				log.Println("Failed to get the absolute path of the storage directory")
+				return nil, err
+			}
+		}
 	}
 
 	err = os.MkdirAll(o.storageDir, 0766)
