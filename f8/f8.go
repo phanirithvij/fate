@@ -65,6 +65,7 @@ type DBConfig struct {
 // Option is a functional option to the entity constructor New.
 type Option func(*options)
 type options struct {
+	appName    string
 	db         *gorm.DB
 	storageDir string
 	dbKind     DBKind
@@ -98,10 +99,19 @@ func SetDBConfig(conf *DBConfig) Option {
 
 // StorageDir the storage directory
 //
-// by default it is `storage` and it
-func StorageDir(db *gorm.DB) Option {
+// by default it is
+func StorageDir(dir string) Option {
 	return func(o *options) {
-		o.db = db
+		o.storageDir = dir
+	}
+}
+
+// AppName the application's name
+//
+// Change this if the default application storage path by default it is `f8`
+func AppName(name string) Option {
+	return func(o *options) {
+		o.appName = name
 	}
 }
 
@@ -176,6 +186,7 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 func New(opts ...Option) (s *StorageConfig, err error) {
 	o := options{
 		storageDir: "storage",
+		appName:    "f8",
 		dbKind:     Sqlite,
 		dbConfig: &DBConfig{
 			LitePath: "f8.db",
@@ -198,14 +209,18 @@ func New(opts ...Option) (s *StorageConfig, err error) {
 		}
 	}
 
-	log.Println(os.UserConfigDir())
-	log.Println(configdir.New("f8", "f8-storage"))
+	if o.storageDir == "" {
+		// log.Println(os.UserConfigDir())
+		appConfg := configdir.New(o.appName, "f8-storage")
+		o.storageDir = appConfg.QueryFolders(configdir.Global)[0].Path
+	}
 
 	err = os.MkdirAll(o.storageDir, 0766)
 	if err != nil {
 		log.Println("Failed to create the storage directory")
 		return nil, err
 	}
+	log.Println("The storage directory is", o.storageDir)
 
 	s = &StorageConfig{
 		StorageDir:   o.storageDir,

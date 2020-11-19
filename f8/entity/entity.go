@@ -210,7 +210,7 @@ func (e *BaseEntity) FetchBuckets() (bucks []*buckets.Bucket) {
 			log.Println("Duplicate bucket exists", val, e.ID, b.ID)
 		}
 	}
-	log.Println(bucks)
+	// log.Println(bucks)
 	return bucks
 }
 
@@ -298,17 +298,15 @@ func (e *BaseEntity) DeleteBucket(bID string) bool {
 	// get bucket from map
 	if val, ok := EntityBucketMap[e.ID][bID]; ok && val != nil {
 		buck = val
-		log.Println("buck is if", val)
 	} else {
 		var err error
 		buck, err = e.GetBucket(bID)
-		log.Println("buck is else", buck)
+		// log.Println("buck is else", buck)
 		if err != nil {
 			log.Println("Bucket doesn't exist")
 			return false
 		}
 	}
-	log.Println("buck is after if", buck)
 	// try delete
 	ok := buck.Delete()
 

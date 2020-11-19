@@ -79,7 +79,7 @@ func main() {
 	}
 	// TODO debug flag
 	if true {
-		db = db.Debug()
+		// db = db.Debug()
 	}
 
 	// Not supported error
@@ -100,8 +100,8 @@ func main() {
 		entity.ID(userID),
 		entity.StorageConfig(storage),
 		entity.TableName(user.TableName()),
-		entity.BucketName("newDefault"),
-		// entity.BucketName(""),
+		// entity.BucketName("newDefault"),
+		entity.BucketName(""),
 		entity.BucketCount(3),
 		entity.DB(db),
 	)
