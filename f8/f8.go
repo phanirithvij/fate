@@ -172,6 +172,7 @@ func (conf *DBConfig) PostGreSQLDB() *gorm.DB {
 	// try to create the database for f8
 	_, err = dbx.Exec("create database " + conf.PGdbname)
 	// no need of the sql connection dispose it
+	// no need to defer because we can close it immediately
 	dbx.Close()
 	if err != nil {
 		if err, ok := err.(*pq.Error); ok {
