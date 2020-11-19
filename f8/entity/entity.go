@@ -30,9 +30,11 @@ type BaseEntity struct {
 
 var (
 	// EntityBucketMap a map of entity and bucket values
+	//
+	//	map[entity_type][entity_id][bucket_id]
 	//	eg:
-	//	map["userid"]["default"]
-	EntityBucketMap map[string]map[string]*buckets.Bucket = make(map[string]map[string]*buckets.Bucket)
+	//	map["users"][userid"]["default"]
+	EntityBucketMap map[string]map[string]map[string]*buckets.Bucket = make(map[string]map[string]map[string]*buckets.Bucket)
 )
 
 // From this vararg approach
@@ -119,6 +121,7 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 	for _, opt := range opts {
 		opt(&o)
 	}
+
 	if o.db == nil {
 		return nil, errors.New("Must pass the gorm database instance")
 	}
@@ -163,6 +166,9 @@ func Entity(opts ...Option) (*BaseEntity, error) {
 
 	ent.defaultBucketName = o.defaultBucketName
 
+	// make for this entity type
+	EntityBucketMap[ent.entityType] = make(map[string]map[string]*buckets.Bucket)
+
 	// populate the buckets from the db
 	_ = ent.FetchBuckets()
 	// if len(existing) > 0 {
@@ -197,14 +203,14 @@ func (e *BaseEntity) FetchBuckets() (bucks []*buckets.Bucket) {
 	e.Buckets = append(e.Buckets, bucks...)
 
 	// populate map
-	if _, ok := EntityBucketMap[e.ID]; !ok {
-		EntityBucketMap[e.ID] = make(map[string]*buckets.Bucket)
+	if _, ok := EntityBucketMap[e.entityType][e.ID]; !ok {
+		EntityBucketMap[e.entityType][e.ID] = make(map[string]*buckets.Bucket)
 	}
 	for _, b := range bucks {
 		b.AttatchDB(e.db)
-		if val, ok := EntityBucketMap[e.ID][b.ID]; !ok {
+		if val, ok := EntityBucketMap[e.entityType][e.ID][b.ID]; !ok {
 			log.Println("Added fetched", b.ID, "to map")
-			EntityBucketMap[e.ID][b.ID] = b
+			EntityBucketMap[e.entityType][e.ID][b.ID] = b
 		} else {
 			// already exists which is unlikely
 			log.Println("Duplicate bucket exists", val, e.ID, b.ID)
@@ -231,11 +237,11 @@ func (e *BaseEntity) GetBuckets() (bucks []*buckets.Bucket) {
 func (e *BaseEntity) OverwriteBuckets() {
 	e.Buckets = e.GetBuckets()
 	// reset and populate map
-	EntityBucketMap[e.ID] = make(map[string]*buckets.Bucket)
+	EntityBucketMap[e.entityType][e.ID] = make(map[string]*buckets.Bucket)
 	for _, b := range e.Buckets {
 		b.AttatchDB(e.db)
-		if _, ok := EntityBucketMap[e.ID][b.ID]; !ok {
-			EntityBucketMap[e.ID][b.ID] = b
+		if _, ok := EntityBucketMap[e.entityType][e.ID][b.ID]; !ok {
+			EntityBucketMap[e.entityType][e.ID][b.ID] = b
 		}
 	}
 }
@@ -243,12 +249,12 @@ func (e *BaseEntity) OverwriteBuckets() {
 // CreateBucket creates a new bucket for the entity
 // and appends it to the entity owned bucket list
 func (e *BaseEntity) CreateBucket(bID string) (buck *buckets.Bucket, err error) {
-	if _, ok := EntityBucketMap[e.ID]; !ok {
-		EntityBucketMap[e.ID] = make(map[string]*buckets.Bucket)
+	if _, ok := EntityBucketMap[e.entityType][e.ID]; !ok {
+		EntityBucketMap[e.entityType][e.ID] = make(map[string]*buckets.Bucket)
 	}
-	if _, ok := EntityBucketMap[e.ID][bID]; !ok {
+	if _, ok := EntityBucketMap[e.entityType][e.ID][bID]; !ok {
 		buck = buckets.NewBucket(bID, e.db)
-		EntityBucketMap[e.ID][bID] = buck
+		EntityBucketMap[e.entityType][e.ID][bID] = buck
 		e.Buckets = append(e.Buckets, buck)
 		log.Println("Added", buck.ID, "to map")
 		return buck, nil
@@ -277,12 +283,12 @@ func (e *BaseEntity) GetBucket(bID string) (buck *buckets.Bucket, err error) {
 	if tx.Error != nil {
 		return nil, tx.Error
 	}
-	if _, ok := EntityBucketMap[e.ID]; !ok {
-		EntityBucketMap[e.ID] = make(map[string]*buckets.Bucket)
+	if _, ok := EntityBucketMap[e.entityType][e.ID]; !ok {
+		EntityBucketMap[e.entityType][e.ID] = make(map[string]*buckets.Bucket)
 	}
 	// Add to map
-	if _, ok := EntityBucketMap[e.ID][bID]; !ok {
-		EntityBucketMap[e.ID][bID] = buck
+	if _, ok := EntityBucketMap[e.entityType][e.ID][bID]; !ok {
+		EntityBucketMap[e.entityType][e.ID][bID] = buck
 	}
 	// TODO add to list if it doesn't exist
 	return buck, nil
@@ -290,13 +296,13 @@ func (e *BaseEntity) GetBucket(bID string) (buck *buckets.Bucket, err error) {
 
 // DeleteBucket deletes a bucket from the entity
 func (e *BaseEntity) DeleteBucket(bID string) bool {
-	if _, ok := EntityBucketMap[e.ID]; !ok {
-		EntityBucketMap[e.ID] = make(map[string]*buckets.Bucket)
+	if _, ok := EntityBucketMap[e.entityType][e.ID]; !ok {
+		EntityBucketMap[e.entityType][e.ID] = make(map[string]*buckets.Bucket)
 	}
 
 	var buck *buckets.Bucket
 	// get bucket from map
-	if val, ok := EntityBucketMap[e.ID][bID]; ok && val != nil {
+	if val, ok := EntityBucketMap[e.entityType][e.ID][bID]; ok && val != nil {
 		buck = val
 	} else {
 		var err error
@@ -318,7 +324,7 @@ func (e *BaseEntity) DeleteBucket(bID string) bool {
 		// delete from list
 		e.Buckets = remove(e.Buckets, idx)
 		// delete from map
-		delete(EntityBucketMap[e.ID], bID)
+		delete(EntityBucketMap[e.entityType][e.ID], bID)
 	}
 
 	return ok

@@ -115,8 +115,8 @@ func main() {
 		entity.StorageConfig(storage),
 		entity.TableName(user.TableName()),
 		// entity.BucketName("newDefault"),
-		entity.BucketName(""),
-		entity.BucketCount(3),
+		// entity.BucketName(""),
+		// entity.BucketCount(3),
 		entity.DB(db),
 	)
 	fmt.Println(user)
@@ -165,7 +165,8 @@ func main() {
 		fmt.Println(len(bucks), "buckets permanently deleted successfully")
 	}
 
-	if v, ok := entity.EntityBucketMap[user.ID]; ok {
+	if v := entity.EntityBucketMap; true {
+		// if v, ok := entity.EntityBucketMap[user.ID]; ok {
 		fmt.Println("Printing entity bucket map")
 		jss, err := json.MarshalIndent(v, "", "  ")
 		if err != nil {
