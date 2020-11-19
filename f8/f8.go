@@ -128,6 +128,7 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 		if conf.PGdbname == "" {
 			conf.PGdbname = "f8"
 		}
+		// https://stackoverflow.com/a/55556599/8608146
 		conninfo := fmt.Sprintf("user=%s password=%s host=%s port=%d sslmode=disable",
 			conf.PGusername,
 			conf.PGpassword,

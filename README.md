@@ -37,11 +37,15 @@ f8
 
 ## TODO
 
-- [ ] Make gorm an internal dependency
-  - [ ] i.e. don't force developer to use gorm
-  - [ ] If they are using they can provide the gorm.DB instance
-  - [ ] If not we will point them to the default database
+- [x] Make gorm an internal dependency
+  - [x] i.e. don't force developer to use gorm
+  - [x] If they are using they can provide the gorm.DB instance
+  - [x] If not we will point them to the default database
 - [ ] Make the main package a test file
+- [ ] UPX needs `--strip-relocs=0` for go uncompression to work
+  - Example https://github.com/upx/upx/issues/2#issuecomment-730387507
+  - `upx fate.exe --strip-relocs=0`
+  - `upx -d fate.exe -o unc.exe --strip-relocs=0`
 
 # FAQ
 
