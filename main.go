@@ -23,6 +23,7 @@ type User struct {
 	Name               string `json:"name" gorm:"not null"`
 	// Emails             []Email `json:"emails" gorm:"foreignKey:UserID;"`
 	Emails []Email `json:"emails" gorm:"polymorphic:User;"`
+	// PGSQL
 	// Emails pq.StringArray `gorm:"type:varchar(254)[]" json:"emails"`
 }
 
@@ -92,6 +93,7 @@ func main() {
 
 	user := new(User)
 	user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
+	// PGSQL
 	// user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
 	userID := "phano"
@@ -171,7 +173,9 @@ func (u User) TableName() string {
 //
 // Upserts the user
 func (u *User) Save() error {
-	cols := []string{"updated_at", "name", "emails"}
+	cols := []string{"updated_at", "name"}
+	// PGSQL
+	// cols := []string{"updated_at", "name", "emails"}
 	tx := db.Clauses(clause.OnConflict{
 		// TODO all primaryKeys not just ID
 		Columns: []clause.Column{{Name: "id"}},
@@ -189,6 +193,7 @@ func AutoMigrate() (err error) {
 	if err != nil {
 		return err
 	}
+	// PGSQL
 	// err = db.AutoMigrate(u)
 	err = db.AutoMigrate(u, &Email{})
 	return err
