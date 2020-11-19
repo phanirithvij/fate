@@ -5,14 +5,15 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/lib/pq"
 	"github.com/phanirithvij/fate/f8"
+	"github.com/phanirithvij/fate/f8/buckets"
 	"github.com/phanirithvij/fate/f8/entity"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // User a simple user struct
@@ -97,47 +98,71 @@ func main() {
 	// user.Emails = []Email{{Email: "pano@fm.dm"}, {Email: "dodo@gmm.ff"}}
 	user.Emails = pq.StringArray{"pano@fm.dm", "dodo@gmm.ff"}
 	user.Name = "Phano"
-	// userID := "phano"
-	userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
+	userID := "phano"
+	// userID := "phano" + strconv.FormatInt(time.Now().Unix(), 10)
 	user.BaseEntity, err = entity.Entity(
 		entity.ID(userID),
 		entity.TableName(user.TableName()),
-		entity.BucketName("default"),
+		entity.BucketName("newDefault"),
+		// entity.BucketName(""),
 		entity.BucketCount(3),
 		entity.DB(db),
 	)
+	fmt.Println(user)
 	err = user.Save()
 	fmt.Println(user)
 
 	// Now manuplate the entity's file system
 
 	// get the default bucket
-	buck, err := user.GetBucket("")
+	buck, err := user.GetBucket("default")
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			fmt.Println("Bucket not found")
 		}
 	}
 	fmt.Println(buck)
+	// should be true
 	fmt.Println("bucket exists?", buck.Exists())
-	ok := user.DeleteBucket(buck.ID)
+	ok := user.DeleteBucket("default-1")
 	if ok {
 		fmt.Println("Deleted successfully")
 	}
-	ok = buck.Delete()
-	if ok {
-		fmt.Println("Deleted successfully twice??")
+	// ok = buck.Delete()
+	// if ok {
+	// 	fmt.Println("Deleted successfully twice??")
+	// }
+	buck, err = user.GetBucket("default-1")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			fmt.Println("Bucket1 not found")
+		}
 	}
+	// should be false
 	fmt.Println("bucket exists?", buck.Exists())
 
-	// if err != nil {
-	// 	if perr, ok := err.(*pq.Error); ok {
-	// 		// Here err is of type *pq.Error, you may inspect all its fields, e.g.:
-	// 		fmt.Println("pq error:", perr.Code.Name())
-	// 	} else {
-	// 		log.Fatal(err)
-	// 	}
-	// }
+	ok = user.DeleteBucket("No such bucket")
+	if !ok {
+		fmt.Println("No, such bucket won't exist")
+	}
+
+	bucks := buckets.GetDeletedBuckets(db)
+	fmt.Println(len(bucks))
+
+	ok = buckets.CleanupBuckets(db)
+	if ok {
+		fmt.Println(len(bucks), "buckets permanently deleted successfully")
+	}
+
+	if v, ok := entity.EntityBucketMap[user.ID]; ok {
+		fmt.Println("Printing entity bucket map")
+		jss, err := json.MarshalIndent(v, "", "  ")
+		if err != nil {
+			fmt.Println(v)
+		} else {
+			fmt.Println(string(jss))
+		}
+	}
 }
 
 // TableName for the user
@@ -146,8 +171,17 @@ func (u User) TableName() string {
 }
 
 // Save a user
+//
+// Upserts the user
 func (u *User) Save() error {
-	tx := db.Create(&u)
+	cols := []string{"updated_at", "name", "emails"}
+	tx := db.Clauses(clause.OnConflict{
+		// TODO all primaryKeys not just ID
+		Columns: []clause.Column{{Name: "id"}},
+		// TODO exept created_at everything
+		DoUpdates: clause.AssignmentColumns(cols),
+	}).Create(&u)
+	log.Println("[WARNING]: Hardcoded feilds for user.Save", cols)
 	return tx.Error
 }
 

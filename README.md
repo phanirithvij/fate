@@ -41,6 +41,7 @@ f8
   - [ ] i.e. don't force developer to use gorm
   - [ ] If they are using they can provide the gorm.DB instance
   - [ ] If not we will point them to the default database
+- [ ] Make the main package a test file
 
 # FAQ
 

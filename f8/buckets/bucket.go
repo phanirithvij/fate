@@ -56,6 +56,8 @@ type Bucket struct {
 	EntityID   string   `gorm:"uniqueIndex:buk_ent_idx;primaryKey"`
 	EntityType string   `gorm:"primaryKey"`
 	db         *gorm.DB `gorm:"-" json:"-"`
+	// Deleted to keep track of deleted buckets
+	Deleted bool `gorm:"-"`
 }
 
 // newBucket returns a new bucket, if id is empty ID is default
@@ -85,18 +87,34 @@ func (b *Bucket) AttatchDB(db *gorm.DB) {
 
 // Exists checks if the bucket already exists
 func (b *Bucket) Exists() bool {
+	if b == nil {
+		log.Println("Bucket is nil handle error checking properly")
+		return false
+	}
 	tx := b.db.First(b)
 	if tx.Error != nil {
 		if errors.Is(tx.Error, gorm.ErrRecordNotFound) {
 			return false
 		}
+		log.Println("?")
 		log.Fatal(tx.Error)
 	}
 	return true
 }
 
 // Delete deletes the bucket
+//
+// Use entity DeleteBucket instead
+// This will delete the bucket but not from the entity map and list
 func (b *Bucket) Delete() bool {
+	if b == nil {
+		log.Println("Bucket is nil handle error checking properly")
+		return false
+	}
+	if b.db == nil {
+		log.Println("Bucket DB is nil AttachDB call missed somewhere")
+		return false
+	}
 	tx := b.db.Delete(b)
 	// it doesn't exist at all
 	if tx.RowsAffected == 0 {
@@ -106,7 +124,8 @@ func (b *Bucket) Delete() bool {
 		log.Println(tx.Error)
 		return false
 	}
-	fmt.Println("Deleted bucket", b.ID)
+	log.Println("Deleted bucket", b.ID)
+	b.Deleted = true
 	return true
 }
 
@@ -185,6 +204,24 @@ func (b *Bucket) BeforeCreate(tx *gorm.DB) (err error) {
 		Columns: cols,
 		// DoUpdates: clause.AssignmentColumns(colsNames),
 		DoNothing: true,
+	})
+	return nil
+}
+
+// BeforeUpdate before updating fix the conflicts for primarykey
+func (b *Bucket) BeforeUpdate(tx *gorm.DB) (err error) {
+	cols := []clause.Column{}
+	colsNames := []string{}
+	for _, field := range tx.Statement.Schema.PrimaryFields {
+		cols = append(cols, clause.Column{Name: field.DBName})
+		colsNames = append(colsNames, field.DBName)
+	}
+	colsNames = append(colsNames, "updated_at")
+	// https://gorm.io/docs/create.html#Upsert-On-Conflict
+	// https://github.com/go-gorm/gorm/issues/3611#issuecomment-729673788
+	tx.Statement.AddClause(clause.OnConflict{
+		Columns:   cols,
+		DoUpdates: clause.AssignmentColumns(colsNames),
 	})
 	return nil
 }
