@@ -69,26 +69,26 @@ const (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	storage, err := f8.New(
-		f8.SetDBConfig(&f8.DBConfig{
-			DatabaseMode: f8.PgSQL,
-			PGusername:   username,
-			PGpassword:   password,
-			PGhostname:   hostname,
-			PGport:       port,
-			PGdbname:     dbame,
-			GormConfig:   &gorm.Config{},
-		}),
-	)
+	posgres := &f8.DBConfig{
+		DatabaseMode: f8.PgSQL,
+		PGusername:   username,
+		PGpassword:   password,
+		PGhostname:   hostname,
+		PGport:       port,
+		PGdbname:     dbame,
+		GormConfig:   &gorm.Config{},
+	}
+	db = posgres.PostGreSQLDB()
+	storage, err := f8.New(f8.DB(db))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// use the instance ourselves
-	db = storage.DB
-	if storage.DB == nil {
-		log.Fatal("DB could not be initialized")
-	}
+	// db = storage.DB
+	// if storage.DB == nil {
+	// 	log.Fatal("DB could not be initialized")
+	// }
 
 	// TODO debug flag
 	if true {
@@ -194,7 +194,7 @@ func (u *User) Save() error {
 		// TODO exept created_at everything
 		DoUpdates: clause.AssignmentColumns(cols),
 	}).Create(&u)
-	log.Println("[WARNING]: Hardcoded feilds for user.Save", cols)
+	log.Println("[main][WARNING]: Hardcoded feilds for user.Save", cols)
 	return tx.Error
 }
 
