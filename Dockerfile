@@ -2,7 +2,6 @@ FROM node:14 as node
 COPY . /app
 WORKDIR /app
 
-RUN which git && exit 2
 RUN mkdir -p /tmp/filebrowser
 RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
@@ -10,8 +9,11 @@ RUN sh wizard.sh -d -a
 
 FROM golang:1.15.5-alpine AS build
 COPY --from=node /app /app
-COPY --from=node /tmp/filebrowser /tmp/filebrowser
+COPY --from=node /bin/git /bin/git
+# COPY --from=node /tmp/filebrowser /tmp/filebrowser
 
+RUN mkdir -p /tmp/filebrowser
+RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
 RUN sh wizard.sh -d -c
 RUN mv filebrowser /app/filebrowser-custom
