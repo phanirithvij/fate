@@ -6,8 +6,7 @@ RUN mkdir -p /tmp/filebrowser
 RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
 RUN bash wizard.sh -d -a
-RUN mv filebrowser filebrowser-custom
-COPY filebrowser-custom /app
+COPY dist /app
 
 FROM heroku/heroku:18-build as build
 COPY . /app
