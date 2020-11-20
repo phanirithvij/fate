@@ -70,25 +70,13 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	posgres := &f8.DBConfig{
-		DatabaseMode: f8.PgSQL,
-		PGusername:   username,
-		PGpassword:   password,
-		PGhostname:   hostname,
-		PGport:       port,
-		PGdbname:     dbame,
-		GormConfig:   &gorm.Config{},
+		DatabaseMode: f8.Sqlite,
 	}
-	db = posgres.PostGreSQLDB()
+	db = posgres.SqliteDB()
 	storage, err := f8.New(f8.DB(db))
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// use the instance ourselves
-	// db = storage.DB
-	// if storage.DB == nil {
-	// 	log.Fatal("DB could not be initialized")
-	// }
 
 	// TODO debug flag
 	if true {
