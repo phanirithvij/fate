@@ -27,4 +27,5 @@ WORKDIR /app
 RUN useradd -m heroku
 USER heroku
 RUN ls -lsh
+RUN go build
 CMD /app/fate
