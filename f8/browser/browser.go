@@ -117,42 +117,56 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	if strings.Contains(url.Path, "api/command") {
 		url.Scheme = "ws"
 		clientC, err := upgrader.Upgrade(w, req, nil)
+		// clientC, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
-			log.Print("upgrade:", err)
+			log.Println("upgrade:", err)
 			return
 		}
-		defer clientC.Close()
 
 		fbC, resp, err := websocket.DefaultDialer.Dial(url.String(), nil)
 		if err != nil {
 			log.Println(fbC, resp)
 			log.Fatal("dial:", err)
 		}
-		defer fbC.Close()
 
-		errChan := make(chan error, 2)
-		done := make(chan bool, 4)
-		cp := func(dst *websocket.Conn, src *websocket.Conn) {
-			mt, message, err := src.ReadMessage()
-			if err != nil {
-				log.Println("read:", err)
-				errChan <- err
-			}
-			log.Printf("recv: %s", message)
-			err = fbC.WriteMessage(mt, message)
-			if err != nil {
-				log.Println("write:", err)
-				errChan <- err
-			}
-			done <- true
+		err = clientC.WriteMessage(websocket.TextMessage, []byte("message"))
+		if err != nil {
+			log.Println("write:", err)
+			return
 		}
+		log.Println("sent message:")
 
-		// Start proxying websocket data
-		go cp(fbC, clientC)
-		go cp(clientC, fbC)
-		// TODO why not work ma god
-		<-done
-		<-errChan
+		// errChan := make(chan error, 6)
+		// // done := make(chan bool, 4)
+		// cp := func(dst *websocket.Conn, src *websocket.Conn) {
+		// 	defer func() {
+		// 		log.Println("Defer cp empty pass")
+		// 		errChan <- errors.New("")
+		// 	}()
+		// 	for {
+		// 		mt, message, err := src.ReadMessage()
+		// 		if err != nil {
+		// 			log.Println("read:", err)
+		// 			errChan <- err
+		// 			return
+		// 		}
+		// 		log.Printf("recv: %s", message)
+		// 		err = fbC.WriteMessage(mt, message)
+		// 		if err != nil {
+		// 			log.Println("write:", err)
+		// 			errChan <- err
+		// 			return
+		// 		}
+		// 		log.Printf("send: %s", message)
+		// 	}
+		// }
+
+		// // Start proxying websocket data
+		// go cp(fbC, clientC)
+		// go cp(clientC, fbC)
+		// // TODO why not work ma god
+		// <-errChan
+		// log.Println("Returning...")
 		return
 	}
 
@@ -220,6 +234,7 @@ func StartBrowser(dirname string) {
 	}
 	err = cmd.Wait()
 	if err != nil {
+		log.Println("The " + fbBinPath + " might be running, please kill it")
 		log.Fatal(err)
 	}
 
