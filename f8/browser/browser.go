@@ -2,7 +2,6 @@ package browser
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"mime"
@@ -12,7 +11,6 @@ import (
 	"os/exec"
 	"strings"
 
-	_ "github.com/elazarl/goproxy"
 	"github.com/gorilla/websocket"
 )
 
@@ -92,7 +90,6 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	proxyReq.Header.Set("Host", req.Host)
 	proxyReq.Header.Set("X-Forwarded-For", req.RemoteAddr)
 
-	fmt.Println(url, req.Method)
 	// Custom auth for the user
 	// https://filebrowser.org/configuration/authentication-method#proxy-header
 	if req.Method == "POST" && strings.Contains(url.Path, "/login") {
@@ -119,38 +116,47 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	// ws://.. shell commands
 	if strings.Contains(url.Path, "api/command") {
 		url.Scheme = "ws"
-		proxyC, err := upgrader.Upgrade(w, req, nil)
+		clientC, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
 			log.Print("upgrade:", err)
 			return
 		}
-		defer proxyC.Close()
+		defer clientC.Close()
 
-		c, resp, err := websocket.DefaultDialer.Dial(url.String(), nil)
+		fbC, resp, err := websocket.DefaultDialer.Dial(url.String(), nil)
 		if err != nil {
-			log.Println(c, resp)
+			log.Println(fbC, resp)
 			log.Fatal("dial:", err)
 		}
-		defer c.Close()
+		defer fbC.Close()
 
-		for {
-			mt, message, err := proxyC.ReadMessage()
+		errChan := make(chan error, 2)
+		done := make(chan bool, 4)
+		cp := func(dst *websocket.Conn, src *websocket.Conn) {
+			mt, message, err := src.ReadMessage()
 			if err != nil {
 				log.Println("read:", err)
-				break
+				errChan <- err
 			}
 			log.Printf("recv: %s", message)
-			err = proxyC.WriteMessage(mt, message)
+			err = fbC.WriteMessage(mt, message)
 			if err != nil {
 				log.Println("write:", err)
-				break
+				errChan <- err
 			}
+			done <- true
 		}
+
+		// Start proxying websocket data
+		go cp(fbC, clientC)
+		go cp(clientC, fbC)
+		// TODO why not work ma god
+		<-done
+		<-errChan
+		return
 	}
 
 	client := &http.Client{}
-
-	fmt.Println(proxyReq.Header)
 
 	proxyRes, err := client.Do(proxyReq)
 	if err != nil {
