@@ -1,6 +1,6 @@
 module github.com/phanirithvij/fate
 
-// +heroku goVersion go1.15.4
+// +heroku goVersion go1.15
 go 1.15
 
 require (
