@@ -26,4 +26,5 @@ ENV HOME /app
 WORKDIR /app
 RUN useradd -m heroku
 USER heroku
+RUN ls -lsh
 CMD /app/fate
