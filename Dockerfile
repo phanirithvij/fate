@@ -11,7 +11,7 @@ RUN rm -rf /app/filebrowser/frontend/node_modules
 FROM golang:1.15.5-alpine AS build
 COPY --from=node /app /app
 RUN apk update
-RUN apk add git
+RUN apk add git gcc
 
 # RUN mkdir -p /app
 # RUN git clone https://github.com/phanirithvij/filebrowser.git /app/filebrowser
