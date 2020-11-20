@@ -9,10 +9,8 @@ RUN bash wizard.sh -d -a
 
 FROM golang:1.14.3-alpine AS build
 COPY --from=node /app /app
-WORKDIR /app
+COPY --from=node /tmp/filebrowser /tmp/filebrowser
 
-RUN mkdir -p /tmp/filebrowser
-RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
 RUN bash wizard.sh -d -c
 RUN mv filebrowser /app/filebrowser-custom
