@@ -1,32 +1,21 @@
-# FROM node:14 as node
-# COPY . /app
-# WORKDIR /app
-
-# RUN mkdir -p /tmp/filebrowser
-# RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
-# WORKDIR /tmp/filebrowser/filebrowser
-# RUN bash wizard.sh -d -a
-
-FROM heroku/heroku:18-build as build
+FROM node:14 as node
 COPY . /app
-# COPY --from=node /app /app
 WORKDIR /app
 
-# Setup buildpack
-RUN mkdir -p /tmp/buildpack/heroku/go /tmp/build_cache /tmp/env
-RUN curl https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/go.tgz | tar xz -C /tmp/buildpack/heroku/go
-RUN ls -l /tmp/buildpack/heroku/go/*
-RUN ls -l /tmp/buildpack/heroku/go
-RUN ls -l /tmp/buildpack/heroku/go/bin
+RUN mkdir -p /tmp/filebrowser
+RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
+WORKDIR /tmp/filebrowser/filebrowser
+RUN bash wizard.sh -d -a
+
+FROM golang:1.14.3-alpine AS build
+COPY --from=node /app /app
+WORKDIR /app
 
 RUN mkdir -p /tmp/filebrowser
 RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
 RUN bash wizard.sh -d -c
-RUN mv filebrowser filebrowser-custom
-
-#Execute Buildpack
-RUN STACK=heroku-18 /tmp/buildpack/heroku/go/bin/compile /app /tmp/build_cache /tmp/env
+RUN mv filebrowser /app/filebrowser-custom
 
 # Prepare final, minimal image
 FROM heroku/heroku:18
