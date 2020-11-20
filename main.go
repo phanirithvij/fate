@@ -103,8 +103,8 @@ func main() {
 		entity.StorageConfig(storage),
 		entity.TableName(user.TableName()),
 		// entity.BucketName("newDefault"),
-		// entity.BucketName(""),
-		// entity.BucketCount(3),
+		entity.BucketName(""),
+		entity.BucketCount(3),
 		entity.DB(db),
 	)
 	fmt.Println(user)

@@ -106,7 +106,7 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 		// now we need to check if such user exists in the server database
 		// if found set a header `X-Generic-AppName` with username is allowed
 
-		// TODO
+		// TODO query the users from the postgers database
 		foundIndDB := true
 		if foundIndDB {
 			proxyReq.Header.Set(fbAuthHeader, us.Username)

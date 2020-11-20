@@ -3,7 +3,6 @@ module github.com/phanirithvij/fate
 go 1.15
 
 require (
-	github.com/elazarl/goproxy v0.0.0-20201021153353-00ad82a08272
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/lib/pq v1.8.0
