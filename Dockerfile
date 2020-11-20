@@ -9,7 +9,8 @@ RUN sh wizard.sh -d -a
 
 FROM golang:1.15.5-alpine AS build
 COPY --from=node /app /app
-RUN apk update && apk install git
+RUN apk update
+RUN apk add git
 # COPY --from=node /tmp/filebrowser /tmp/filebrowser
 
 RUN mkdir -p /tmp/filebrowser
