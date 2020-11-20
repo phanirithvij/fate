@@ -47,3 +47,7 @@ esac
 echo then run go build and ./fate
 echo ""
 echo "Navigate to http://localhost:3000/admin"
+
+echo "Login: admin Password: admin"
+echo "Enable user signup"
+echo "Enable user home directory"
