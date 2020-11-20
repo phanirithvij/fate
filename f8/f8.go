@@ -9,6 +9,7 @@ import (
 
 	// We need postgres driver
 	"github.com/lib/pq"
+	"github.com/phanirithvij/fate/f8/browser"
 	"github.com/shibukawa/configdir"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
@@ -247,4 +248,9 @@ func New(opts ...Option) (s *StorageConfig, err error) {
 
 	s.InitDB(s.DB)
 	return s, err
+}
+
+// StartBrowser starts a filebrowser instance
+func (s *StorageConfig) StartBrowser() {
+	browser.StartBrowser(s.StorageDir)
 }

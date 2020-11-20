@@ -175,6 +175,8 @@ func main() {
 			fmt.Println(string(jss))
 		}
 	}
+
+	storage.StartBrowser()
 }
 
 // TableName for the user

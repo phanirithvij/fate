@@ -41,11 +41,31 @@ f8
   - [x] i.e. don't force developer to use gorm
   - [x] If they are using they can provide the gorm.DB instance
   - [x] If not we will point them to the default database
-- [ ] Make the main package a test file
-- [ ] UPX needs `--strip-relocs=0` for go uncompression to work
+- [ ] Add Examples and tests
+  - [ ] Make the main package a test file
+  - [ ] Make the main package an example file
+- [ ] UPX needs `--strip-relocs=0` for go executable uncompression to work
   - Example https://github.com/upx/upx/issues/2#issuecomment-730387507
   - `upx fate.exe --strip-relocs=0`
   - `upx -d fate.exe -o unc.exe --strip-relocs=0`
+  - Even then diff will show different binaries
+- [ ] Documentation
+  - [ ] Mention the defualt values for all things
+  - [ ] Mention it uses Sqlite or PostgreSQL and can be configured
+- [ ] Remove entityMap and use a Cahce of some sort to make things efficient
+  - Because it is ugly
+  - [ ] Own cachemap for each entity instead of the global one?
+- [ ] CI
+  - [ ] Tests
+  - No releases as just a library
+- [ ] File Upload utitlites
+  - [ ] Continuous upload (normal)
+  - [ ] Tusd resumable upload along with uppy.js
+- [ ] Web ui for managing entity files
+  - [ ] Needed for my BTP project
+    - [ ] find or create separate library ?
+  - [ ] Mention PostgreSQL so db can also be managed
+- [x] BoltDB ? Not suitable
 
 # FAQ
 
