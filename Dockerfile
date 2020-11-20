@@ -7,7 +7,7 @@ RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/f
 WORKDIR /tmp/filebrowser/filebrowser
 RUN bash wizard.sh -d -a
 
-FROM golang:1.14.3-alpine AS build
+FROM golang:1.15.5-alpine AS build
 COPY --from=node /app /app
 COPY --from=node /tmp/filebrowser /tmp/filebrowser
 
