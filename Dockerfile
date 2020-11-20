@@ -6,7 +6,6 @@ RUN mkdir -p /tmp/filebrowser
 RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
 RUN bash wizard.sh -d -a
-RUN pwd && ls -lSh * && tree
 COPY frontend/dist /app
 
 FROM heroku/heroku:18-build as build
