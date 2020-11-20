@@ -18,7 +18,7 @@ RUN curl https://codon-buildpacks.s3.amazonaws.com/buildpacks/heroku/go.tgz | ta
 RUN mkdir -p /tmp/filebrowser
 RUN git clone https://github.com/phanirithvij/filebrowser.git /tmp/filebrowser/filebrowser
 WORKDIR /tmp/filebrowser/filebrowser
-RUN bash wizard.sh -d -b
+RUN bash wizard.sh -d -c
 RUN mv filebrowser filebrowser-custom
 
 #Execute Buildpack
