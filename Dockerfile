@@ -21,7 +21,8 @@ WORKDIR /app/filebrowser
 RUN sh wizard.sh -d -c
 RUN mv filebrowser /app/filebrowser-custom
 WORKDIR /app
-RUN go build -tags netgo -a -v --ldflags '-linkmode external -extldflags "-static"'
+RUN go build --ldflags '-linkmode external -extldflags "-static"'
+# RUN go build -tags netgo -a -v
 # RUN go build
 
 # Prepare final, minimal image
@@ -33,4 +34,5 @@ WORKDIR /app
 RUN useradd -m heroku
 USER heroku
 RUN ls -lsh
+RUN command -v apk
 CMD /app/fate
