@@ -1,6 +1,7 @@
 {
     "name": "f8-sample",
     "description": "f8 sample on heroku",
+    "stack": "container",
     "keywords": [
         "getting-started",
         "go",
