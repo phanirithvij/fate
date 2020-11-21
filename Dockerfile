@@ -21,7 +21,8 @@ WORKDIR /app/filebrowser
 RUN sh wizard.sh -d -c
 RUN mv filebrowser /app/filebrowser-custom
 WORKDIR /app
-RUN go build
+RUN go build -tags netgo -a -v
+# RUN go build
 
 # Prepare final, minimal image
 FROM heroku/heroku:18
