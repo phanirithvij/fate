@@ -17,6 +17,8 @@ RUN apk add git gcc musl-dev
 WORKDIR /app/filebrowser
 RUN sh wizard.sh -d -c
 RUN mv filebrowser /app/filebrowser-custom
+WORKDIR /app
+RUN go build
 
 # Prepare final, minimal image
 FROM heroku/heroku:18
@@ -27,5 +29,4 @@ WORKDIR /app
 RUN useradd -m heroku
 USER heroku
 RUN ls -lsh
-RUN go build
 CMD /app/fate
