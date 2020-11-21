@@ -28,6 +28,7 @@ RUN go build --ldflags '-linkmode external -extldflags "-static"'
 # Prepare final, minimal image
 FROM heroku/heroku:18
 
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 COPY --from=build /app /app
 ENV HOME /app
 WORKDIR /app
