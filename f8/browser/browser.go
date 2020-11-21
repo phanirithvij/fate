@@ -221,8 +221,10 @@ func StartBrowser(dirname string) {
 		}
 	}()
 
-	// filebrowser config set --auth.method=proxy --auth.header=X-spmething-username
+	// filebrowser config set --auth.method=proxy --auth.header=X-Generic-AppName --auth.proxy.showLogin
 	// cmd := exec.Command("filebrowser", "config", "cat")
+	log.Println(os.Getwd())
+	log.Println(os.Getenv("PATH"))
 	cmd := exec.Command(fbBinPath, "config", "set", "--auth.method=proxy", "--auth.header="+fbAuthHeader, "--auth.proxy.showLogin")
 	out, err := cmd.StdoutPipe()
 	if err != nil {
