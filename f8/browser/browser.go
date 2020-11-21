@@ -3,6 +3,7 @@ package browser
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -227,7 +228,12 @@ func StartBrowser(dirname string) {
 	_, err := os.Stat("filebrowser.db")
 	if err != nil {
 		// need to do this first
-		err = Exec(fbBinPath, "config", "init")
+		cmd := &Cmd{
+			name:  fbBinPath,
+			args:  []string{"config", "init"},
+			alias: "fbinit",
+		}
+		err = cmd.Exec()
 		if err != nil {
 			log.Println("Failed to initialize filebrowser configuration")
 			log.Fatal(err)
@@ -235,8 +241,12 @@ func StartBrowser(dirname string) {
 	}
 
 	// filebrowser config set --auth.method=proxy --auth.header=X-Generic-AppName --auth.proxy.showLogin
-	// cmd := exec.Command("filebrowser", "config", "cat")
-	err = Exec(fbBinPath, "config", "set", "--auth.method=proxy", "--auth.header="+fbAuthHeader, "--auth.proxy.showLogin")
+	cmd := &Cmd{
+		name:  fbBinPath,
+		args:  []string{"config", "set", "--auth.method=proxy", "--auth.header=" + fbAuthHeader, "--auth.proxy.showLogin"},
+		alias: "fbconf",
+	}
+	err = cmd.Exec()
 	if err != nil {
 		log.Println("The " + fbBinPath + " might be running, please kill it")
 		log.Fatal(err)
@@ -245,15 +255,33 @@ func StartBrowser(dirname string) {
 	log.Println("Starting filebrowser...")
 
 	// filebrowser -r storageDir -b /admin
-	err = Exec(fbBinPath, "-r", dirname, "-b", fbBaseURL)
+	cmd = &Cmd{
+		name:  fbBinPath,
+		args:  []string{"-r", dirname, "-b", fbBaseURL},
+		alias: "fbrowser",
+	}
+	err = cmd.Exec()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
+// Cmd cmd
+type Cmd struct {
+	name  string
+	args  []string
+	alias string
+}
+
 // Exec executes a command also syncing the Stdout, stderr to the console
-func Exec(name string, arg ...string) (err error) {
-	cmd := exec.Command(name, arg...)
+func (c *Cmd) Exec() (err error) {
+	if c.name == "" || c.args == nil {
+		return errors.New("Must provide name along with args")
+	}
+	if c.alias == "" {
+		c.alias = c.name
+	}
+	cmd := exec.Command(c.name, c.args...)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -272,7 +300,7 @@ func Exec(name string, arg ...string) (err error) {
 	outScanner := bufio.NewScanner(out)
 	go func(progress *stdBuff) {
 		for outScanner.Scan() {
-			progress.set(fmt.Sprintln("["+name+"]::stdout", outScanner.Text()))
+			progress.set(fmt.Sprintln("["+c.alias+"]::stdout", outScanner.Text()))
 			fmt.Fprint(os.Stdout, progress.get())
 		}
 	}(outProgress)
@@ -281,7 +309,7 @@ func Exec(name string, arg ...string) (err error) {
 	errScanner := bufio.NewScanner(stderr)
 	go func(progress *stdBuff) {
 		for errScanner.Scan() {
-			progress.set(fmt.Sprintln("["+name+"]::stderr", errScanner.Text()))
+			progress.set(fmt.Sprintln("["+c.alias+"]::stderr", errScanner.Text()))
 			fmt.Fprint(os.Stderr, progress.get())
 		}
 	}(errProgress)
