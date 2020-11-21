@@ -185,7 +185,7 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	// Copy code
 	w.WriteHeader(proxyRes.StatusCode)
 
-	log.Println(proxyRes.Header.Get("Content-Type"))
+	log.Println("PROXY :::::::::\n", proxyRes.Header)
 
 	uparts := strings.Split(url.String(), ".")
 	ext := "." + uparts[len(uparts)-1]
@@ -204,7 +204,7 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	// Copy body
 	io.Copy(w, proxyRes.Body)
 
-	log.Println(w.Header(), url)
+	log.Println("FINAL RESPONSE ----------\n", w.Header(), url, "...\n ")
 }
 
 // StartBrowser starts the filebrowser instance
