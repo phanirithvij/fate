@@ -1,7 +1,9 @@
 package browser
 
 import (
+	"bufio"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"mime"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -221,11 +224,14 @@ func StartBrowser(dirname string) {
 		}
 	}()
 
-	// need to do this first
-	err := Exec(fbBinPath, "config", "init")
+	_, err := os.Stat("filebrowser.db")
 	if err != nil {
-		log.Println("Failed to initialize filebrowser configuration")
-		log.Fatal(err)
+		// need to do this first
+		err = Exec(fbBinPath, "config", "init")
+		if err != nil {
+			log.Println("Failed to initialize filebrowser configuration")
+			log.Fatal(err)
+		}
 	}
 
 	// filebrowser config set --auth.method=proxy --auth.header=X-Generic-AppName --auth.proxy.showLogin
@@ -260,14 +266,43 @@ func Exec(name string, arg ...string) (err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = io.Copy(os.Stdout, out)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = io.Copy(os.Stderr, stderr)
-	if err != nil {
-		log.Fatal(err)
-	}
+
+	outProgress := &stdBuff{}
+
+	outScanner := bufio.NewScanner(out)
+	go func(progress *stdBuff) {
+		for outScanner.Scan() {
+			progress.set(fmt.Sprintln("["+name+"]::stdout", outScanner.Text()))
+			fmt.Fprint(os.Stdout, progress.get())
+		}
+	}(outProgress)
+
+	errProgress := &stdBuff{}
+	errScanner := bufio.NewScanner(stderr)
+	go func(progress *stdBuff) {
+		for errScanner.Scan() {
+			progress.set(fmt.Sprintln("["+name+"]::stderr", errScanner.Text()))
+			fmt.Fprint(os.Stderr, progress.get())
+		}
+	}(errProgress)
+
 	err = cmd.Wait()
 	return err
+}
+
+type stdBuff struct {
+	sync.RWMutex
+	current string
+}
+
+func (p *stdBuff) set(value string) {
+	p.Lock()
+	defer p.Unlock()
+	p.current = value
+}
+
+func (p *stdBuff) get() string {
+	p.RLock()
+	defer p.RUnlock()
+	return p.current
 }
