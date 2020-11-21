@@ -211,7 +211,11 @@ func StartBrowser(dirname string) {
 		reg := &RegexpHandler{}
 		reg.HandleFunc(fbBaseURL+"/*", fileBrowser)
 		// reg.HandleFunc("/", allRoutes)
-		err := http.ListenAndServe(":3000", reg)
+		PORT := os.Getenv("PORT")
+		if PORT == "" {
+			PORT = "3000"
+		}
+		err := http.ListenAndServe(":"+PORT, reg)
 		if err != nil {
 			log.Fatal(err)
 		}
