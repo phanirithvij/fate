@@ -215,6 +215,7 @@ func StartBrowser(dirname string) {
 		if PORT == "" {
 			PORT = "3000"
 		}
+		log.Println("Running on port", PORT)
 		err := http.ListenAndServe(":"+PORT, reg)
 		if err != nil {
 			log.Fatal(err)
