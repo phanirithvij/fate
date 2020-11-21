@@ -181,14 +181,13 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	// Copy code
 	// w.WriteHeader(proxyRes.StatusCode)
 
-	// fmt.Println(proxyRes.Header.Get("Content-Type"))
+	log.Println(proxyRes.Header.Get("Content-Type"))
 
 	uparts := strings.Split(url.String(), ".")
 	ext := "." + uparts[len(uparts)-1]
 	// Copy headers as no clone method for function, no lvalues :(
 	// fmt.Println("\nheader, values.............", url)
 	for header, values := range proxyRes.Header.Clone() {
-		// fmt.Println(header, values)
 		for _, value := range values {
 			if (header == "Content-Type") && mime.TypeByExtension(ext) == "text/css" {
 				w.Header().Set(header, value)
@@ -201,7 +200,7 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	// Copy body
 	io.Copy(w, proxyRes.Body)
 
-	// fmt.Println(w.Header(), url)
+	log.Println(w.Header(), url)
 }
 
 // StartBrowser starts the filebrowser instance
