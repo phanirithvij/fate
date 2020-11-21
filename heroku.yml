@@ -5,4 +5,4 @@ build:
     web: Dockerfile
 
 run:
-  web: fate
+  web: pwd && ls -lsh /app && /app/fate
