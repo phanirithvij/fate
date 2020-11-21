@@ -179,7 +179,7 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	defer proxyRes.Body.Close()
 
 	// Copy code
-	// w.WriteHeader(proxyRes.StatusCode)
+	w.WriteHeader(proxyRes.StatusCode)
 
 	log.Println(proxyRes.Header.Get("Content-Type"))
 
