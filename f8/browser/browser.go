@@ -221,11 +221,33 @@ func StartBrowser(dirname string) {
 		}
 	}()
 
+	// need to do this first
+	err := Exec(fbBinPath, "config", "init")
+	if err != nil {
+		log.Println("Failed to initialize filebrowser configuration")
+		log.Fatal(err)
+	}
+
 	// filebrowser config set --auth.method=proxy --auth.header=X-Generic-AppName --auth.proxy.showLogin
 	// cmd := exec.Command("filebrowser", "config", "cat")
-	log.Println(os.Getwd())
-	log.Println(os.Getenv("PATH"))
-	cmd := exec.Command(fbBinPath, "config", "set", "--auth.method=proxy", "--auth.header="+fbAuthHeader, "--auth.proxy.showLogin")
+	err = Exec(fbBinPath, "config", "set", "--auth.method=proxy", "--auth.header="+fbAuthHeader, "--auth.proxy.showLogin")
+	if err != nil {
+		log.Println("The " + fbBinPath + " might be running, please kill it")
+		log.Fatal(err)
+	}
+
+	log.Println("Starting filebrowser...")
+
+	// filebrowser -r storageDir -b /admin
+	err = Exec(fbBinPath, "-r", dirname, "-b", fbBaseURL)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// Exec executes a command also syncing the Stdout, stderr to the console
+func Exec(name string, arg ...string) (err error) {
+	cmd := exec.Command(name, arg...)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -247,20 +269,5 @@ func StartBrowser(dirname string) {
 		log.Fatal(err)
 	}
 	err = cmd.Wait()
-	if err != nil {
-		log.Println("The " + fbBinPath + " might be running, please kill it")
-		log.Fatal(err)
-	}
-
-	// filebrowser -r storageDir -b /admin
-	cmd = exec.Command(fbBinPath, "-r", dirname, "-b", fbBaseURL)
-	err = cmd.Start()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Println("Starting filebrowser...")
-	err = cmd.Wait()
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }
