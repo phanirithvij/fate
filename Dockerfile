@@ -33,5 +33,6 @@ ENV HOME /app
 WORKDIR /app
 RUN useradd -m heroku
 USER heroku
+ENV PATH="$PWD:${PATH}"
 RUN ls -lsh
 CMD /app/fate
