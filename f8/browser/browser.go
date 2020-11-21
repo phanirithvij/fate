@@ -230,11 +230,19 @@ func StartBrowser(dirname string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
 	err = cmd.Start()
 	if err != nil {
 		log.Fatal(err)
 	}
 	_, err = io.Copy(os.Stdout, out)
+	if err != nil {
+		log.Fatal(err)
+	}
+	_, err = io.Copy(os.Stderr, stderr)
 	if err != nil {
 		log.Fatal(err)
 	}
