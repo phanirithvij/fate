@@ -35,4 +35,4 @@ RUN useradd -m heroku
 USER heroku
 ENV PATH="/app:${PATH}"
 RUN ls -lsh
-CMD /app/fate
+CMD pwd && /app/fate
