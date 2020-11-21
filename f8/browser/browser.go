@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"mime"
@@ -15,6 +14,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/fatih/color"
 	"github.com/gorilla/websocket"
 )
 
@@ -229,9 +229,10 @@ func StartBrowser(dirname string) {
 	if err != nil {
 		// need to do this first
 		cmd := &Cmd{
-			name:  fbBinPath,
-			args:  []string{"config", "init"},
-			alias: "fbinit",
+			Name:      fbBinPath,
+			Args:      []string{"config", "init"},
+			Alias:     "fbinit",
+			ShouldLog: true,
 		}
 		err = cmd.Exec()
 		if err != nil {
@@ -242,9 +243,10 @@ func StartBrowser(dirname string) {
 
 	// filebrowser config set --auth.method=proxy --auth.header=X-Generic-AppName --auth.proxy.showLogin
 	cmd := &Cmd{
-		name:  fbBinPath,
-		args:  []string{"config", "set", "--auth.method=proxy", "--auth.header=" + fbAuthHeader, "--auth.proxy.showLogin"},
-		alias: "fbconf",
+		Name:      fbBinPath,
+		Args:      []string{"config", "set", "--auth.method=proxy", "--auth.header=" + fbAuthHeader, "--auth.proxy.showLogin"},
+		Alias:     "fbconf",
+		ShouldLog: true,
 	}
 	err = cmd.Exec()
 	if err != nil {
@@ -252,72 +254,148 @@ func StartBrowser(dirname string) {
 		log.Fatal(err)
 	}
 
-	log.Println("Starting filebrowser...")
-
 	// filebrowser -r storageDir -b /admin
-	cmd = &Cmd{
-		name:  fbBinPath,
-		args:  []string{"-r", dirname, "-b", fbBaseURL},
-		alias: "fbrowser",
+	fbcmd := &Cmd{
+		Name:       fbBinPath,
+		Args:       []string{"-r", dirname, "-b", fbBaseURL},
+		Alias:      "fbrowser",
+		Background: true,
+		ShouldLog:  true,
 	}
-	err = cmd.Exec()
+	fbcmd.SetLogLevel(log.Lshortfile)
+	log.Println("Starting filebrowser...")
+	err = fbcmd.Exec()
 	if err != nil {
-		log.Fatal(err)
+		fbcmd.StderrLogger.Fatal(err)
 	}
+
+	fbcmd.Wg.Wait()
 }
 
 // Cmd cmd
 type Cmd struct {
-	name  string
-	args  []string
-	alias string
+	// Name the name of the command or the entity point
+	Name string
+	// Args the command's arguments
+	Args []string
+	// Alias an alias for the command used when logging
+	Alias string
+	// Background whether the command should run in background in a goroutine
+	//
+	// If set to true, you MUST call cmd.Wg.Wait() for program to not exit
+	Background bool
+	cmd        *exec.Cmd
+	Wg         *sync.WaitGroup
+	// ShouldLog whether the command should log
+	ShouldLog bool
+	// The logger used by to log to stdout
+	StdoutLogger *log.Logger
+	// The logger used by to log to stderr
+	StderrLogger *log.Logger
+	// DefaultLogLevel log.LstdFlags | log.Lshortfile
+	DefaultLogLevel *int
 }
 
 // Exec executes a command also syncing the Stdout, stderr to the console
 func (c *Cmd) Exec() (err error) {
-	if c.name == "" || c.args == nil {
+	c.Wg = &sync.WaitGroup{}
+	if c.Name == "" || c.Args == nil {
 		return errors.New("Must provide name along with args")
 	}
-	if c.alias == "" {
-		c.alias = c.name
+	if c.Alias == "" {
+		c.Alias = c.Name
 	}
-	cmd := exec.Command(c.name, c.args...)
-	out, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = cmd.Start()
-	if err != nil {
-		log.Fatal(err)
+	c.cmd = exec.Command(c.Name, c.Args...)
+
+	if c.ShouldLog {
+		err = c.Log()
 	}
 
-	outProgress := &stdBuff{}
-
-	outScanner := bufio.NewScanner(out)
-	go func(progress *stdBuff) {
-		for outScanner.Scan() {
-			progress.set(fmt.Sprintln("["+c.alias+"]::stdout", outScanner.Text()))
-			fmt.Fprint(os.Stdout, progress.get())
-		}
-	}(outProgress)
-
-	errProgress := &stdBuff{}
-	errScanner := bufio.NewScanner(stderr)
-	go func(progress *stdBuff) {
-		for errScanner.Scan() {
-			progress.set(fmt.Sprintln("["+c.alias+"]::stderr", errScanner.Text()))
-			fmt.Fprint(os.Stderr, progress.get())
-		}
-	}(errProgress)
-
-	err = cmd.Wait()
+	if c.Background {
+		c.Wg.Add(1)
+		go func() {
+			err = c.cmd.Wait()
+			c.Wg.Done()
+		}()
+		return err
+	}
+	err = c.cmd.Wait()
 	return err
 }
 
+// SetLogLevel sets the default logging level
+//
+// log.LstdFlags etc..
+func (c *Cmd) SetLogLevel(l int) {
+	c.DefaultLogLevel = &l
+}
+
+// Println prints to stdout
+func (c *Cmd) Println(args ...interface{}) {
+	c.initLoggers()
+	c.StdoutLogger.Println(args...)
+}
+
+// Errln prints to sterr
+func (c *Cmd) Errln(args ...interface{}) {
+	c.initLoggers()
+	c.StderrLogger.Println(args...)
+}
+
+func (c *Cmd) initLoggers() {
+	if c.StderrLogger == nil {
+		c.StderrLogger = log.New(os.Stderr, "", *c.DefaultLogLevel)
+	}
+	if c.StdoutLogger == nil {
+		c.StdoutLogger = log.New(os.Stdout, "", *c.DefaultLogLevel)
+	}
+}
+
+// Log starts logging the command output
+func (c *Cmd) Log() error {
+	if c.DefaultLogLevel == nil {
+		def := log.LstdFlags | log.Lshortfile
+		c.DefaultLogLevel = &def
+	}
+	c.initLoggers()
+	out, err := c.cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := c.cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	err = c.cmd.Start()
+	if err != nil {
+		return err
+	}
+	outProgress := &stdBuff{}
+
+	outScanner := bufio.NewScanner(out)
+	c.StdoutLogger.SetPrefix(color.GreenString("["+c.Alias+"]") + color.CyanString("::stdout "))
+	go func(progress *stdBuff) {
+		for outScanner.Scan() {
+			progress.set(outScanner.Text())
+			c.StdoutLogger.Println(progress.get())
+			progress.set("")
+		}
+	}(outProgress)
+
+	// errProgress := &stdBuff{}
+	errScanner := bufio.NewScanner(stderr)
+	c.StderrLogger.SetPrefix(color.HiRedString("[" + c.Alias + "]" + color.CyanString("::stderr ")))
+	go func(progress *stdBuff) {
+		for errScanner.Scan() {
+			progress.set(errScanner.Text())
+			c.StderrLogger.Println(progress.get())
+			progress.set("")
+		}
+	}(outProgress)
+	return err
+}
+
+// https://stackoverflow.com/questions/20009588/golang-how-to-print-data-from-running-goroutine-at-fixed-intervals#comment29809839_20011457
 type stdBuff struct {
 	sync.RWMutex
 	current string

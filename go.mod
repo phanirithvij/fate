@@ -4,6 +4,7 @@ module github.com/phanirithvij/fate
 go 1.15
 
 require (
+	github.com/fatih/color v1.10.0
 	github.com/google/uuid v1.1.2
 	github.com/gorilla/websocket v1.4.2
 	github.com/lib/pq v1.8.0
