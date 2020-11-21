@@ -3,7 +3,3 @@
 build:
   docker:
     web: Dockerfile
-    
-
-# run:
-#   web: pwd && ls -lsh /app && /app/fate

@@ -28,12 +28,13 @@ RUN go build --ldflags '-linkmode external -extldflags "-static"'
 # Prepare final, minimal image
 FROM heroku/heroku:18
 
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 COPY --from=build /app /app
 ENV HOME /app
 WORKDIR /app
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+ADD ./.profile.d /app/.profile.d
 RUN useradd -m heroku
 USER heroku
 ENV PATH="/app:${PATH}"
 RUN ls -lsh
-CMD pwd && /app/fate
+CMD /app/fate
