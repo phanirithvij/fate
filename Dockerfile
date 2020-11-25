@@ -15,7 +15,7 @@ RUN apk add git gcc musl-dev build-base libc6-compat
 
 WORKDIR /app
 # rice assets here where we have go available
-RUN bash custom-fb.sh -r -d
+RUN sh custom-fb.sh -r -d
 RUN go build
 
 # Prepare final, minimal image
