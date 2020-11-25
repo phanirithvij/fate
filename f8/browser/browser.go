@@ -17,9 +17,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
-var (
-	target    string
-	port      int
+const (
 	fbBaseURL = "/admin"
 )
 
@@ -28,14 +26,18 @@ type pythonData struct {
 	store *storage.Storage
 }
 
-func quickSetup(d *pythonData) {
-	k, err := settings.GenerateKey()
+func checkError(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func quickSetup(d *pythonData) {
+	k, err := settings.GenerateKey()
+	checkError(err)
+
 	set := &settings.Settings{
-		AuthMethod: auth.MethodJSONAuth,
-		// AuthMethod:    auth.MethodProxyAuth,
+		AuthMethod:    auth.MethodJSONAuth,
 		Key:           k,
 		Signup:        true,
 		CreateUserDir: true,
@@ -56,20 +58,13 @@ func quickSetup(d *pythonData) {
 		},
 	}
 	err = d.store.Auth.Save(&auth.JSONAuth{})
-	// err = d.store.Auth.Save(&auth.ProxyAuth{
-	// 	Header:        fbAuthHeader,
-	// 	ShowLoginPage: true,
-	// })
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
 	err = d.store.Settings.Save(set)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
-	wd, _ := os.Getwd()
+	wd, err := os.Getwd()
+	checkError(err)
 
 	ser := &settings.Server{
 		BaseURL: fbBaseURL,
@@ -78,18 +73,15 @@ func quickSetup(d *pythonData) {
 		Address: "127.0.0.1",
 		Root:    wd,
 	}
+
 	err = d.store.Settings.SaveServer(ser)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 	username := "admin"
 	password := ""
 
 	if password == "" {
 		password, err = users.HashPwd("admin")
-		if err != nil {
-			log.Fatal(err)
-		}
+		checkError(err)
 	}
 
 	if username == "" || password == "" {
@@ -127,15 +119,11 @@ func StartBrowser(dirname string) {
 	}
 
 	db, err := storm.Open("filebrowser.db")
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 	defer db.Close()
 
 	d.store, err = bolt.NewStorage(db)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
 	if !d.hadDB {
 		quickSetup(d)
@@ -143,14 +131,10 @@ func StartBrowser(dirname string) {
 
 	var fileCache diskcache.Interface = diskcache.NewNoOp()
 	server, err := d.store.Settings.GetServer()
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
 	handler, err := fbhttp.NewHandler(img.New(4), fileCache, d.store, server)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 
 	reg := &RegexpHandler{}
 	reg.Handler(fbBaseURL, handler)
@@ -161,7 +145,5 @@ func StartBrowser(dirname string) {
 	}
 	log.Println("Running on port", PORT)
 	err = http.ListenAndServe(":"+PORT, reg)
-	if err != nil {
-		log.Fatal(err)
-	}
+	checkError(err)
 }
