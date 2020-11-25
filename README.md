@@ -27,6 +27,8 @@ heroku builds:cancel <id>
 heroku builds:cancel
 # show logs
 heroku logs --tail
+# push local branch to remote
+git push -f heroku middleware-heroku:main
 ```
 
 ## Usage (undecided)
