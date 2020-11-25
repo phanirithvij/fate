@@ -2,9 +2,10 @@ FROM node:14 as node
 COPY . /app
 WORKDIR /app
 
-RUN mkdir -p /app/filebrowser
-RUN git clone https://github.com/phanirithvij/filebrowser.git /app/filebrowser
+# RUN mkdir -p /app/filebrowser
+# RUN git clone https://github.com/phanirithvij/filebrowser.git /app/filebrowser
 WORKDIR /app/filebrowser
+# build assets only we don't need filebrowser exe
 RUN sh wizard.sh -d -a
 RUN rm -rf /app/filebrowser/frontend/node_modules
 
@@ -16,16 +17,8 @@ RUN apk add git gcc musl-dev
 RUN apk add build-base
 RUN apk add libc6-compat
 
-# RUN mkdir -p /app
-# RUN git clone https://github.com/phanirithvij/filebrowser.git /app/filebrowser
-WORKDIR /app/filebrowser
-RUN sh wizard.sh -d -c
-RUN mv filebrowser /app/filebrowser-custom
 WORKDIR /app
-# https://stackoverflow.com/a/58185179/8608146
-RUN go build --ldflags '-linkmode external -extldflags "-static"'
-# RUN go build -tags netgo -a -v
-# RUN go build
+RUN go build
 
 # Prepare final, minimal image
 FROM heroku/heroku:18
