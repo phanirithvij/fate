@@ -40,7 +40,7 @@ riceAssets () {
 }
 
 
-REPO="./filebrowser"
+REPO=$(readlink -f "filebrowser")
 
 usage() {
   echo "Usage: $0 [-a assets only] [-r rice only] [-d debug]" 1>&2;
