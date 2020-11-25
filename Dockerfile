@@ -6,6 +6,7 @@ WORKDIR /app
 # RUN git clone https://github.com/phanirithvij/filebrowser.git /app/filebrowser
 WORKDIR /app/filebrowser
 # build assets only we don't need filebrowser exe
+RUN git status
 RUN ls -la
 RUN sh wizard.sh -d -a
 RUN rm -rf /app/filebrowser/frontend/node_modules
