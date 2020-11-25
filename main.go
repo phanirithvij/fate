@@ -168,6 +168,9 @@ func main() {
 }
 
 // TableName for the user
+//
+// This is being set manually so it can be called multiple times
+// in the fate codebase
 func (u User) TableName() string {
 	return "users"
 }
@@ -185,6 +188,7 @@ func (u *User) Save() error {
 		// TODO exept created_at everything
 		DoUpdates: clause.AssignmentColumns(cols),
 	}).Create(&u)
+	// remove this line after fixing the above cols logic
 	log.Println("[main][WARNING]: Hardcoded feilds for user.Save", cols)
 	return tx.Error
 }
