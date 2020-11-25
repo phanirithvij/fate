@@ -296,6 +296,8 @@ type Cmd struct {
 	DefaultLogLevel *int
 }
 
+// https://stackoverflow.com/a/20011457/8608146
+
 // Exec executes a command also syncing the Stdout, stderr to the console
 func (c *Cmd) Exec() (err error) {
 	c.Wg = &sync.WaitGroup{}
