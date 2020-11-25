@@ -14,5 +14,6 @@ require (
 	gorm.io/gorm v1.20.7
 )
 
-replace github.com/filebrowser/filebrowser/v2 => ./temp/filebrowser
+replace github.com/filebrowser/filebrowser/v2 => ./filebrowser
+// replace github.com/filebrowser/filebrowser/v2 => github.com/phanirithvij/filebrowser/v2 master
 // replace github.com/filebrowser/filebrowser/v2 => github.com/phanirithvij/filebrowser/v2 v2.9.1-0.20201125121250-2d82696cf6bd
