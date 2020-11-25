@@ -17,6 +17,7 @@ WORKDIR /app
 # rice assets here where we have go available
 RUN sh custom-fb.sh -r -d
 RUN go build
+RUN ls -lsh
 
 # Prepare final, minimal image
 FROM heroku/heroku:18

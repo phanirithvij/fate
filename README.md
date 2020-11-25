@@ -5,17 +5,16 @@ An file storage bucket system where abstract entities have file storage capabilt
 Consists of an Entity manager where one can register an entity
 
 ```sh
-git clone https://github.com/phanirithvij/fate
+git clone --recurse-submodules -j8 https://github.com/phanirithvij/fate
 cd fate
-# this will build a filebrowser-custom executable
-bash custom-fb.sh
-# Add it to the PATH
+# this will build filebrowser assets
+bash custom-fb.sh -a -d
+bash custom-fb.sh -r -d
 go build
 ./fate # .\fate.exe
 ```
 
 ## Usage (undecided)
-
 
 Example
 
