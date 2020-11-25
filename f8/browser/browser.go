@@ -17,7 +17,9 @@ import (
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
-const (
+var (
+	target    string
+	port      int
 	fbBaseURL = "/admin"
 )
 
@@ -32,7 +34,8 @@ func quickSetup(d *pythonData) {
 		log.Fatal(err)
 	}
 	set := &settings.Settings{
-		AuthMethod:    auth.MethodJSONAuth,
+		AuthMethod: auth.MethodJSONAuth,
+		// AuthMethod:    auth.MethodProxyAuth,
 		Key:           k,
 		Signup:        true,
 		CreateUserDir: true,
@@ -53,6 +56,10 @@ func quickSetup(d *pythonData) {
 		},
 	}
 	err = d.store.Auth.Save(&auth.JSONAuth{})
+	// err = d.store.Auth.Save(&auth.ProxyAuth{
+	// 	Header:        fbAuthHeader,
+	// 	ShowLoginPage: true,
+	// })
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -110,21 +117,6 @@ func otherRoutes(w http.ResponseWriter, req *http.Request) {
 
 // StartBrowser starts the filebrowser instance
 func StartBrowser(dirname string) {
-	reg := &RegexpHandler{}
-	reg.Handler(fbBaseURL, fileBrowser())
-	reg.HandleFunc("/", otherRoutes)
-	PORT := os.Getenv("PORT")
-	if PORT == "" {
-		PORT = "3000"
-	}
-	log.Println("Running on port", PORT)
-	err := http.ListenAndServe(":"+PORT, reg)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func fileBrowser() http.Handler {
 	log.SetOutput(os.Stdout)
 	d := &pythonData{hadDB: true}
 
@@ -139,6 +131,7 @@ func fileBrowser() http.Handler {
 		log.Fatal(err)
 	}
 	defer db.Close()
+
 	d.store, err = bolt.NewStorage(db)
 	if err != nil {
 		log.Fatal(err)
@@ -159,5 +152,16 @@ func fileBrowser() http.Handler {
 		log.Fatal(err)
 	}
 
-	return handler
+	reg := &RegexpHandler{}
+	reg.Handler(fbBaseURL, handler)
+	reg.HandleFunc("/", otherRoutes)
+	PORT := os.Getenv("PORT")
+	if PORT == "" {
+		PORT = "3000"
+	}
+	log.Println("Running on port", PORT)
+	err = http.ListenAndServe(":"+PORT, reg)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
