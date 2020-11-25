@@ -3,7 +3,7 @@ COPY . /app
 WORKDIR /app
 
 # build assets only we don't need filebrowser exe
-RUN bash custom-fb.sh -a
+RUN bash custom-fb.sh -a -d
 RUN rm -rf /app/filebrowser/frontend/node_modules
 
 FROM golang:1.15.5-alpine AS build
@@ -16,7 +16,7 @@ RUN apk add libc6-compat
 
 WORKDIR /app
 # rice assets here where we have go available
-RUN bash custom-fb.sh -r
+RUN bash custom-fb.sh -r -d
 RUN go build
 
 # Prepare final, minimal image

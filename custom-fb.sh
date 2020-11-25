@@ -19,10 +19,12 @@ buildAssets () {
 
   exe cd $REPO/frontend
 
-  if [ "$CI" = "true" ]; then
-    exe npm ci
-  else
-    exe npm install
+  if [ ! -d "node_modules" ]; then
+    if [ "$CI" = "true" ]; then
+      exe npm ci
+    else
+      exe npm install
+    fi
   fi
 
   exe npm run build
