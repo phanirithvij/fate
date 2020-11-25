@@ -31,7 +31,7 @@ ADD ./.profile.d /app/.profile.d
 RUN useradd -m heroku
 # https://github.com/alexander-akhmetov/python-telegram/issues/3#issuecomment-438061449
 RUN apt-get update
-RUN apt-get install musl-dev
+RUN apt-get install -y musl-dev
 RUN ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
 USER heroku
 # https://stackoverflow.com/a/38742545/8608146
