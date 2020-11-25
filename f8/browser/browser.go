@@ -17,9 +17,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
-var (
-	target    string
-	port      int
+const (
 	fbBaseURL = "/admin"
 )
 
@@ -34,8 +32,7 @@ func quickSetup(d *pythonData) {
 		log.Fatal(err)
 	}
 	set := &settings.Settings{
-		AuthMethod: auth.MethodJSONAuth,
-		// AuthMethod:    auth.MethodProxyAuth,
+		AuthMethod:    auth.MethodJSONAuth,
 		Key:           k,
 		Signup:        true,
 		CreateUserDir: true,
@@ -56,10 +53,6 @@ func quickSetup(d *pythonData) {
 		},
 	}
 	err = d.store.Auth.Save(&auth.JSONAuth{})
-	// err = d.store.Auth.Save(&auth.ProxyAuth{
-	// 	Header:        fbAuthHeader,
-	// 	ShowLoginPage: true,
-	// })
 	if err != nil {
 		log.Fatal(err)
 	}

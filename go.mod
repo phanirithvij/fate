@@ -5,10 +5,8 @@ go 1.15
 
 require (
 	github.com/asdine/storm v2.1.2+incompatible
-	github.com/fatih/color v1.10.0
 	github.com/filebrowser/filebrowser/v2 v2.10.0
 	github.com/google/uuid v1.1.2
-	github.com/gorilla/websocket v1.4.2
 	github.com/lib/pq v1.8.0
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
 	gorm.io/driver/postgres v1.0.5
