@@ -25,8 +25,8 @@ FROM heroku/heroku:18
 COPY --from=build /app /app
 ENV HOME /app
 WORKDIR /app
-RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-ADD ./.profile.d /app/.profile.d
+# RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+# ADD ./.profile.d /app/.profile.d
 RUN useradd -m heroku
 USER heroku
 # https://stackoverflow.com/a/38742545/8608146
