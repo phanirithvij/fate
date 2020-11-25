@@ -18,7 +18,10 @@ import (
 )
 
 const (
-	fbBaseURL = "/admin"
+	// TODO arg
+	fbBaseURL  = "/admin"
+	fbDBPath   = "filebrowser.db"
+	serverPort = "3000"
 )
 
 type pythonData struct {
@@ -63,12 +66,13 @@ func quickSetup(d *pythonData) {
 	err = d.store.Settings.Save(set)
 	checkError(err)
 
+	// TODO arg
 	wd, err := os.Getwd()
 	checkError(err)
 
 	ser := &settings.Server{
 		BaseURL: fbBaseURL,
-		Port:    "8080",
+		Port:    serverPort,
 		Log:     "stdout",
 		Address: "127.0.0.1",
 		Root:    wd,
@@ -98,9 +102,7 @@ func quickSetup(d *pythonData) {
 	user.Perm.Admin = true
 
 	err = d.store.Users.Save(user)
-	if err != nil {
-		log.Println(err)
-	}
+	checkError(err)
 }
 
 func otherRoutes(w http.ResponseWriter, req *http.Request) {
@@ -112,13 +114,13 @@ func StartBrowser(dirname string) {
 	log.SetOutput(os.Stdout)
 	d := &pythonData{hadDB: true}
 
-	_, err := os.Stat("filebrowser.db")
+	_, err := os.Stat(fbDBPath)
 	log.Println(err)
 	if err != nil {
 		d.hadDB = false
 	}
 
-	db, err := storm.Open("filebrowser.db")
+	db, err := storm.Open(fbDBPath)
 	checkError(err)
 	defer db.Close()
 
@@ -141,7 +143,7 @@ func StartBrowser(dirname string) {
 	reg.HandleFunc("/", otherRoutes)
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
-		PORT = "3000"
+		PORT = serverPort
 	}
 	log.Println("Running on port", PORT)
 	err = http.ListenAndServe(":"+PORT, reg)
