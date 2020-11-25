@@ -32,4 +32,4 @@ USER heroku
 # https://stackoverflow.com/a/38742545/8608146
 ENV PATH="/app:${PATH}"
 RUN ls -lsh
-CMD /app/fate
+CMD pwd && ls -lsh && /app/fate
