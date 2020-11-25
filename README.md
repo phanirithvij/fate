@@ -14,6 +14,21 @@ go build
 ./fate # .\fate.exe
 ```
 
+```sh
+# ssh to heroku instance
+heroku run bash
+# ssh to container
+heroku ps:exec
+# list all builds
+heroku builds
+# cancel running build with id
+heroku builds:cancel <id>
+# cancel running build
+heroku builds:cancel
+# show logs
+heroku logs --tail
+```
+
 ## Usage (undecided)
 
 Example
