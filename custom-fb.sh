@@ -3,51 +3,78 @@ exe(){
     "$@"
     { set +x; } 2>/dev/null
 }
-exe mkdir -p temp
-exe cd temp
-exe git clone https://github.com/phanirithvij/filebrowser
-exe cd filebrowser
 
-exe bash wizard.sh -d -b
+ASSETS="false"
+RICE="false"
 
-unameOut="$(uname -s)"
-case "${unameOut}" in
-    MSYS*)
-    exe cp filebrowser ../../"filebrowser-custom.exe";;
-    CYGWIN*)
-    exe cp filebrowser ../../"filebrowser-custom.exe";;
-    MINGW*)
-    exe cp filebrowser ../../"filebrowser-custom.exe";;
+debugInfo () {
+  echo "Repo:           $REPO"
+  echo "Build assets:   $ASSETS"
+  echo "Rice assets:    $RICE"
+}
+
+buildAssets () {
+  exe cd $REPO
+  exe rm -rf frontend/dist
+
+  exe cd $REPO/frontend
+
+  if [ "$CI" = "true" ]; then
+    exe npm ci
+  else
+    exe npm install
+  fi
+
+  exe npm run build
+}
+
+riceAssets () {
+  if ! [ -x "$(command -v rice)" ]; then
+    exe go install github.com/GeertJohan/go.rice/rice
+  fi
+  exe rm -f http/rice-box.go
+
+  exe cd $REPO/http
+  exe rm -rf rice-box.go
+  exe rice embed-go -i "github.com/filebrowser/filebrowser/v2/http"
+}
+
+
+REPO="./filebrowser"
+
+usage() {
+  echo "Usage: $0 [-a assets only] [-r rice only] [-d debug]" 1>&2;
+  exit 1;
+}
+
+DEBUG="false"
+
+while getopts "ar:d" o; do
+  case "${o}" in
+    a)
+      ASSETS="true"
+      ;;
+    r)
+      RICE="true"
+      ;;
+    d)
+      DEBUG="true"
+      ;;
     *)
-    exe cp filebrowser ../../"filebrowser-custom";;
-esac
+      usage
+      ;;
+  esac
+done
+shift $((OPTIND-1))
 
-cd ../../
+if [ "$DEBUG" = "true" ]; then
+  debugInfo
+fi
 
-echo ""
-echo Please add \"$PWD\" to PATH
-echo ""
-echo "Linux and Mac"
-echo "export PATH=\$PATH:$PWD"
-echo ""
-echo "on Windows"
-echo "set PATH=%PATH%;$PWD"
-echo ""
-echo "OR Install it to \$GOBIN"
-case "${unameOut}" in
-    MSYS*)
-    echo "cp filebrowser-custom.exe $GOPATH/bin";;
-    CYGWIN*)
-    echo "cp filebrowser-custom.exe $GOPATH/bin";;
-    MINGW*)
-    echo "cp filebrowser-custom.exe $GOPATH/bin";;
-    *)
-    echo "cp filebrowser-custom $GOPATH/bin";;
-esac
-echo then run go build and ./fate
-echo ""
-echo "Navigate to http://localhost:3000/admin"
+if [ "$ASSETS" = "true" ]; then
+  buildAssets
+fi
 
-echo "Login: admin Password: admin"
-echo "Enable user signup"
-echo "Enable user home directory"
+if [ "$RICE" = "true" ]; then
+  riceAssets
+fi

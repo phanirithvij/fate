@@ -2,13 +2,8 @@ FROM node:14 as node
 COPY . /app
 WORKDIR /app
 
-# RUN mkdir -p /app/filebrowser
-# RUN git clone https://github.com/phanirithvij/filebrowser.git /app/filebrowser
-WORKDIR /app/filebrowser
 # build assets only we don't need filebrowser exe
-RUN git status
-RUN ls -la
-RUN sh wizard.sh -d -a
+RUN bash custom-fb.sh -a
 RUN rm -rf /app/filebrowser/frontend/node_modules
 
 FROM golang:1.15.5-alpine AS build
@@ -20,6 +15,8 @@ RUN apk add build-base
 RUN apk add libc6-compat
 
 WORKDIR /app
+# rice assets here where we have go available
+RUN bash custom-fb.sh -r
 RUN go build
 
 # Prepare final, minimal image
