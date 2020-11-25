@@ -4,15 +4,14 @@ WORKDIR /app
 
 # build assets only we don't need filebrowser exe
 RUN bash custom-fb.sh -a -d
+# remove node_modules as we need not copy it
 RUN rm -rf /app/filebrowser/frontend/node_modules
 
 FROM golang:1.15.5-alpine AS build
 COPY --from=node /app /app
 RUN apk update
 # https://stackoverflow.com/a/58478169/8608146
-RUN apk add git gcc musl-dev
-RUN apk add build-base
-RUN apk add libc6-compat
+RUN apk add git gcc musl-dev build-base libc6-compat
 
 WORKDIR /app
 # rice assets here where we have go available
