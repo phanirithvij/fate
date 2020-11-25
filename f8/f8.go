@@ -29,8 +29,8 @@ based on the working directory of the executable`
 type DBKind string
 
 const (
-	// PgSQL Postgresql will be used as the internal database
-	PgSQL DBKind = "postgres"
+	// Postgres Postgresql will be used as the internal database
+	Postgres DBKind = "postgres"
 	// Sqlite implies Sqlite will be used as the database
 	Sqlite DBKind = "sqlite"
 )
@@ -115,11 +115,11 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 	log.Println("Initializing grom database ...")
 	conf := s.DBConfig
 	if conf == nil {
-		log.Println("Warning: Config was null")
+		log.Fatal("Error: Config was null")
 		return nil
 	}
 	switch conf.DatabaseMode {
-	case PgSQL:
+	case Postgres:
 		s.DB = conf.PostGreSQLDB()
 		return s.DB
 	case Sqlite:
@@ -136,7 +136,7 @@ func (s *StorageConfig) InitDB(existing *gorm.DB) *gorm.DB {
 // SqliteDB an sqlite database
 func (conf *DBConfig) SqliteDB() *gorm.DB {
 	if conf.DatabaseMode != Sqlite {
-		log.Println("Warning: not a sqlite database")
+		log.Fatalln("Error: not a sqlite database")
 		return nil
 	}
 	var err error
@@ -149,8 +149,8 @@ func (conf *DBConfig) SqliteDB() *gorm.DB {
 
 // PostGreSQLDB retuns a grom database from the config
 func (conf *DBConfig) PostGreSQLDB() *gorm.DB {
-	if conf.DatabaseMode != PgSQL {
-		log.Println("Warning: not a postgres database")
+	if conf.DatabaseMode != Postgres {
+		log.Fatalln("Error: not a postgres database")
 		return nil
 	}
 	var err error
@@ -176,6 +176,7 @@ func (conf *DBConfig) PostGreSQLDB() *gorm.DB {
 	// no need to defer because we can close it immediately
 	dbx.Close()
 	if err != nil {
+		log.Println(err)
 		if err, ok := err.(*pq.Error); ok {
 			// https://pkg.go.dev/github.com/lib/pq#hdr-Errors
 			if err.Code.Name() == "duplicate_database" {

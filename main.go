@@ -61,18 +61,23 @@ const (
 	password = "522191"
 	hostname = "localhost"
 	port     = 5433
-	dbame    = "f8"
+	dbname   = "f8"
 	// port     = "5432"
 )
 
 // Main entrypoint for hacky development tests
 func main() {
-	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	log.SetFlags(log.LstdFlags | log.Llongfile)
 
 	posgres := &f8.DBConfig{
-		DatabaseMode: f8.Sqlite,
+		PGdbname:     dbname,
+		PGhostname:   hostname,
+		PGpassword:   password,
+		PGport:       port,
+		PGusername:   username,
+		DatabaseMode: f8.Postgres,
 	}
-	db = posgres.SqliteDB()
+	db = posgres.PostGreSQLDB()
 	storage, err := f8.New(f8.DB(db))
 	if err != nil {
 		log.Fatal(err)

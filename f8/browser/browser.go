@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"mime"
@@ -14,7 +15,16 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/asdine/storm"
 	"github.com/fatih/color"
+	"github.com/filebrowser/filebrowser/v2/auth"
+	"github.com/filebrowser/filebrowser/v2/diskcache"
+	fbhttp "github.com/filebrowser/filebrowser/v2/http"
+	"github.com/filebrowser/filebrowser/v2/img"
+	"github.com/filebrowser/filebrowser/v2/settings"
+	"github.com/filebrowser/filebrowser/v2/storage"
+	"github.com/filebrowser/filebrowser/v2/storage/bolt"
+	"github.com/filebrowser/filebrowser/v2/users"
 	"github.com/gorilla/websocket"
 )
 
@@ -61,14 +71,6 @@ func copyIO(src, dest net.Conn) {
 	defer dest.Close()
 	io.Copy(dest, src)
 }
-
-// func allRoutes(w http.ResponseWriter, req *http.Request) {
-// 	for name, headers := range req.Header {
-// 		for _, h := range headers {
-// 			fmt.Fprintf(w, "%v: %v\n", name, h)
-// 		}
-// 	}
-// }
 
 // User ...
 type User struct {
@@ -207,13 +209,142 @@ func fileBrowser(w http.ResponseWriter, req *http.Request) {
 	log.Println("FINAL RESPONSE ----------\n", w.Header(), url, "...\n ")
 }
 
+type pythonData struct {
+	hadDB bool
+	store *storage.Storage
+}
+
+func quickSetup(d *pythonData) {
+	fmt.Println("================================")
+	fmt.Println("Quick setup")
+	k, err := settings.GenerateKey()
+	if err != nil {
+		log.Fatal(err)
+	}
+	set := &settings.Settings{
+		AuthMethod: auth.MethodJSONAuth,
+		// AuthMethod:    auth.MethodProxyAuth,
+		Key:           k,
+		Signup:        true,
+		CreateUserDir: true,
+		Defaults: settings.UserDefaults{
+			Scope:       ".",
+			Locale:      "en",
+			SingleClick: false,
+			Perm: users.Permissions{
+				Admin:    false,
+				Execute:  true,
+				Create:   true,
+				Rename:   true,
+				Modify:   true,
+				Delete:   true,
+				Share:    true,
+				Download: true,
+			},
+		},
+	}
+	err = d.store.Auth.Save(&auth.JSONAuth{})
+	// err = d.store.Auth.Save(&auth.ProxyAuth{
+	// 	Header:        fbAuthHeader,
+	// 	ShowLoginPage: true,
+	// })
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = d.store.Settings.Save(set)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	wd, _ := os.Getwd()
+
+	ser := &settings.Server{
+		BaseURL: fbBaseURL,
+		Port:    "8080",
+		Log:     "stdout",
+		Address: "127.0.0.1",
+		Root:    wd,
+	}
+	err = d.store.Settings.SaveServer(ser)
+	if err != nil {
+		log.Fatal(err)
+	}
+	username := "admin"
+	password := ""
+
+	if password == "" {
+		password, err = users.HashPwd("admin")
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if username == "" || password == "" {
+		log.Fatal("username and password cannot be empty during quick setup")
+	}
+
+	user := &users.User{
+		Username:     username,
+		Password:     password,
+		LockPassword: false,
+	}
+
+	set.Defaults.Apply(user)
+	user.Perm.Admin = true
+
+	err = d.store.Users.Save(user)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func allRoutes(w http.ResponseWriter, req *http.Request) {
+	fmt.Fprintln(w, "HELLOE>E>E>>")
+}
+
 // StartBrowser starts the filebrowser instance
 func StartBrowser(dirname string) {
+	log.SetOutput(os.Stdout)
+	d := &pythonData{hadDB: true}
+
+	_, err := os.Stat("filebrowser.db")
+	log.Println(err)
+	if err != nil {
+		d.hadDB = false
+	}
+
+	db, err := storm.Open("filebrowser.db")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	d.store, err = bolt.NewStorage(db)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if !d.hadDB {
+		quickSetup(d)
+	}
+
+	var fileCache diskcache.Interface = diskcache.NewNoOp()
+	server, err := d.store.Settings.GetServer()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	handler, err := fbhttp.NewHandler(img.New(4), fileCache, d.store, server)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// go Forwarding()
 	go func() {
 		reg := &RegexpHandler{}
-		reg.HandleFunc(fbBaseURL+"/*", fileBrowser)
-		// reg.HandleFunc("/", allRoutes)
+		// reg.HandleFunc(fbBaseURL+"/*", fileBrowser)
+		reg.Handler(fbBaseURL, handler)
+		reg.HandleFunc("/", allRoutes)
 		PORT := os.Getenv("PORT")
 		if PORT == "" {
 			PORT = "3000"
@@ -225,51 +356,53 @@ func StartBrowser(dirname string) {
 		}
 	}()
 
-	_, err := os.Stat("filebrowser.db")
-	if err != nil {
-		// need to do this first
-		cmd := &Cmd{
-			Name:      fbBinPath,
-			Args:      []string{"config", "init"},
-			Alias:     "fbinit",
-			ShouldLog: true,
-		}
-		err = cmd.Exec()
-		if err != nil {
-			log.Println("Failed to initialize filebrowser configuration")
-			log.Fatal(err)
-		}
-	}
+	// _, err = os.Stat("filebrowser.db")
+	// if err != nil {
+	// 	// // need to do this first
+	// 	// cmd := &Cmd{
+	// 	// 	Name:      fbBinPath,
+	// 	// 	Args:      []string{"config", "init"},
+	// 	// 	Alias:     "fbinit",
+	// 	// 	ShouldLog: true,
+	// 	// }
+	// 	// err = cmd.Exec()
+	// 	// if err != nil {
+	// 	// 	log.Println("Failed to initialize filebrowser configuration")
+	// 	// 	log.Fatal(err)
+	// 	// }
+	// }
+	c := make(chan int, 1)
+	<-c
 
 	// filebrowser config set --auth.method=proxy --auth.header=X-Generic-AppName --auth.proxy.showLogin
-	cmd := &Cmd{
-		Name:      fbBinPath,
-		Args:      []string{"config", "set", "--auth.method=proxy", "--auth.header=" + fbAuthHeader, "--auth.proxy.showLogin"},
-		Alias:     "fbconf",
-		ShouldLog: true,
-	}
-	err = cmd.Exec()
-	if err != nil {
-		log.Println("The " + fbBinPath + " might be running, please kill it")
-		log.Fatal(err)
-	}
+	// cmd := &Cmd{
+	// 	Name:      fbBinPath,
+	// 	Args:      []string{"config", "set", "--auth.method=proxy", "--auth.header=" + fbAuthHeader, "--auth.proxy.showLogin"},
+	// 	Alias:     "fbconf",
+	// 	ShouldLog: true,
+	// }
+	// err = cmd.Exec()
+	// if err != nil {
+	// 	log.Println("The " + fbBinPath + " might be running, please kill it")
+	// 	log.Fatal(err)
+	// }
 
-	// filebrowser -r storageDir -b /admin
-	fbcmd := &Cmd{
-		Name:       fbBinPath,
-		Args:       []string{"-r", dirname, "-b", fbBaseURL},
-		Alias:      "fbrowser",
-		Background: true,
-		ShouldLog:  true,
-	}
-	fbcmd.SetLogLevel(log.Lshortfile)
-	log.Println("Starting filebrowser...")
-	err = fbcmd.Exec()
-	if err != nil {
-		fbcmd.StderrLogger.Fatal(err)
-	}
+	// // filebrowser -r storageDir -b /admin
+	// fbcmd := &Cmd{
+	// 	Name:       fbBinPath,
+	// 	Args:       []string{"-r", dirname, "-b", fbBaseURL},
+	// 	Alias:      "fbrowser",
+	// 	Background: true,
+	// 	ShouldLog:  true,
+	// }
+	// fbcmd.SetLogLevel(log.Lshortfile)
+	// log.Println("Starting filebrowser...")
+	// err = fbcmd.Exec()
+	// if err != nil {
+	// 	fbcmd.StderrLogger.Fatal(err)
+	// }
 
-	fbcmd.Wg.Wait()
+	// fbcmd.Wg.Wait()
 }
 
 // Cmd cmd
