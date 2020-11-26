@@ -69,15 +69,20 @@ const (
 func main() {
 	log.SetFlags(log.LstdFlags | log.Llongfile)
 
-	posgres := &f8.DBConfig{
-		PGdbname:     dbname,
-		PGhostname:   hostname,
-		PGpassword:   password,
-		PGport:       port,
-		PGusername:   username,
-		DatabaseMode: f8.Postgres,
+	// posgres := &f8.DBConfig{
+	// 	PGdbname:     dbname,
+	// 	PGhostname:   hostname,
+	// 	PGpassword:   password,
+	// 	PGport:       port,
+	// 	PGusername:   username,
+	// 	DatabaseMode: f8.Postgres,
+	// }
+	// db = posgres.PostGreSQLDB()
+	sqlitedb := &f8.DBConfig{
+		LitePath:     "f8.db",
+		DatabaseMode: f8.Sqlite,
 	}
-	db = posgres.PostGreSQLDB()
+	db = sqlitedb.SqliteDB()
 	storage, err := f8.New(f8.DB(db))
 	if err != nil {
 		log.Fatal(err)
