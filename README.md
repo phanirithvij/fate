@@ -1,4 +1,6 @@
 # fate (f8)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fphanirithvij%2Ffate.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fphanirithvij%2Ffate?ref=badge_shield)
+
 
 An file storage bucket system where abstract entities have file storage capabilties
 
@@ -82,3 +84,7 @@ Abstract Entity File Transfer (aeft -> fate -> f8)
 ## How useful is this?
 
 Not sure. Just made it for some of my projects which all require file uploads, exports, sharing and file transfer analytics
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fphanirithvij%2Ffate.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fphanirithvij%2Ffate?ref=badge_large)
