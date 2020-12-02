@@ -19,7 +19,7 @@ WORKDIR /app
 RUN sh custom-fb.sh -r -d
 
 RUN go build
-RUN upx fate
+RUN upx fate --ultra-brute
 # RUN go build --ldflags '-linkmode external'
 RUN ls -lsh
 
