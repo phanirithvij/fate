@@ -5,6 +5,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
+	"time"
 
 	"github.com/asdine/storm"
 	"github.com/filebrowser/filebrowser/v2/auth"
@@ -142,8 +144,9 @@ func StartBrowser(dirname string) {
 	checkError(err)
 
 	reg := &RegexpHandler{}
+	ihand := &InterceptHandler{handler: handler}
 	// TODO caching
-	reg.Handler(fbBaseURL, handler)
+	reg.Handler(fbBaseURL, ihand)
 	reg.HandleFunc("/", otherRoutes)
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
@@ -152,4 +155,37 @@ func StartBrowser(dirname string) {
 	log.Println("Running on port", PORT)
 	err = http.ListenAndServe(":"+PORT, reg)
 	checkError(err)
+}
+
+// InterceptHandler ...
+type InterceptHandler struct {
+	handler http.Handler
+}
+
+var (
+	cacheSince    = time.Now()
+	cacheSinceStr = cacheSince.Format(http.TimeFormat)
+	cacheUntil    = time.Now().AddDate(60, 0, 0)
+	cacheUntilStr = cacheUntil.Format(http.TimeFormat)
+)
+
+func (h *InterceptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if strings.HasPrefix(r.URL.Path, "/admin/static") {
+		// TODO check if /admin/static then cache && forward or just forward
+		modtime := r.Header.Get("If-Modified-Since")
+		if modtime != "" {
+			fmt.Println(modtime)
+			// TODO check if file is modified since time `t`
+			// t, _ := time.Parse(http.TimeFormat, modtime)
+			w.WriteHeader(http.StatusNotModified)
+			// no need to forward as cache
+			return
+		}
+
+		w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
+		w.Header().Set("Last-Modified", cacheSinceStr)
+		w.Header().Set("Expires", cacheUntilStr)
+	}
+	// forward
+	h.handler.ServeHTTP(w, r)
 }
