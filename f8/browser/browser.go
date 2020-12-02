@@ -159,7 +159,7 @@ func StartBrowser(dirname string) {
 
 // https://play.golang.org/p/fpETA9_1oo
 
-// FBCache ...
+// FBCache An extension cache handler for filebrowser assets
 type FBCache struct {
 	handler http.Handler
 }
@@ -172,14 +172,14 @@ var (
 	cacheUntilStr = cacheUntil.Format(http.TimeFormat)
 )
 
+// ServeHTTP serves checks if /admin/static then caches && forward or just 304
 func (h *FBCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, fbBaseURL+"/static") {
-		// TODO check if /admin/static then cache && forward or just 304
 		modtime := r.Header.Get("If-Modified-Since")
 		if modtime != "" {
-			fmt.Println(modtime)
 			// TODO check if file is modified since time `t`
 			// t, _ := time.Parse(http.TimeFormat, modtime)
+			log.Println("[Warning] not checking if modified")
 			w.WriteHeader(http.StatusNotModified)
 			// no need to forward as cache
 			return
