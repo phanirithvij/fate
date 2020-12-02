@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/storage"
 	"github.com/filebrowser/filebrowser/v2/storage/bolt"
 	"github.com/filebrowser/filebrowser/v2/users"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -138,16 +140,26 @@ func StartBrowser(dirname string) {
 		quickSetup(d)
 	}
 
+	// TODO cache dir
 	var fileCache diskcache.Interface = diskcache.NewNoOp()
+	cacheDir := "cache"
+	if cerr := os.MkdirAll(cacheDir, 0700); cerr != nil {
+		log.Fatalf("can't make cache directory %s: %s", cacheDir, cerr)
+	}
+	fileCache = diskcache.New(afero.NewOsFs(), cacheDir)
+
 	server, err := d.store.Settings.GetServer()
 	checkError(err)
 
-	handler, err := fbhttp.NewHandler(img.New(4), fileCache, d.store, server)
+	// num cpu cores workers
+	numW := maxCPU()
+	log.Println("Image processing worker count:", numW)
+
+	handler, err := fbhttp.NewHandler(img.New(numW), fileCache, d.store, server)
 	checkError(err)
 
 	reg := &RegexpHandler{}
 	fbcHandler := &FBCache{handler: handler}
-	// TODO caching
 	reg.Handler(fbBaseURL, fbcHandler)
 	reg.HandleFunc("/", otherRoutes)
 	PORT := os.Getenv("PORT")
@@ -194,4 +206,14 @@ func (h *FBCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// forward
 	h.handler.ServeHTTP(w, r)
+}
+
+// maxCPU max parllelism
+func maxCPU() int {
+	maxProcs := runtime.GOMAXPROCS(0)
+	numCPU := runtime.NumCPU()
+	if maxProcs < numCPU {
+		return maxProcs
+	}
+	return numCPU
 }

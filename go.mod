@@ -9,11 +9,13 @@ require (
 	github.com/google/uuid v1.1.2
 	github.com/lib/pq v1.8.0
 	github.com/shibukawa/configdir v0.0.0-20170330084843-e180dbdc8da0
+	github.com/spf13/afero v1.2.2
 	gorm.io/driver/postgres v1.0.5
 	gorm.io/driver/sqlite v1.1.3
 	gorm.io/gorm v1.20.7
 )
 
 replace github.com/filebrowser/filebrowser/v2 => ./filebrowser
+
 // replace github.com/filebrowser/filebrowser/v2 => github.com/phanirithvij/filebrowser/v2 master
 // replace github.com/filebrowser/filebrowser/v2 => github.com/phanirithvij/filebrowser/v2 v2.9.1-0.20201125121250-2d82696cf6bd
