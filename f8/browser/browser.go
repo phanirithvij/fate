@@ -210,6 +210,7 @@ func (h *FBCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // maxCPU max parllelism
 func maxCPU() int {
+	// https://stackoverflow.com/a/13245047/8608146
 	maxProcs := runtime.GOMAXPROCS(0)
 	numCPU := runtime.NumCPU()
 	if maxProcs < numCPU {
