@@ -61,6 +61,9 @@ func quickSetup(d *pythonData) {
 				Download: true,
 			},
 		},
+		Branding: settings.Branding{
+			Theme: "dark",
+		},
 	}
 	err = d.store.Auth.Save(&auth.JSONAuth{})
 	checkError(err)
@@ -120,7 +123,6 @@ func StartBrowser(dirname string) {
 	d := &pythonData{hadDB: true}
 
 	_, err := os.Stat(fbDBPath)
-	log.Println(err)
 	if err != nil {
 		d.hadDB = false
 	}
