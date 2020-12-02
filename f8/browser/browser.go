@@ -36,12 +36,12 @@ func checkError(err error) {
 }
 
 func quickSetup(d *pythonData) {
-	k, err := settings.GenerateKey()
+	key, err := settings.GenerateKey()
 	checkError(err)
 
 	set := &settings.Settings{
 		AuthMethod:    auth.MethodJSONAuth,
-		Key:           k,
+		Key:           key,
 		Signup:        true,
 		CreateUserDir: true,
 		Defaults: settings.UserDefaults{
@@ -71,11 +71,14 @@ func quickSetup(d *pythonData) {
 	checkError(err)
 
 	ser := &settings.Server{
-		BaseURL: fbBaseURL,
-		Port:    serverPort,
-		Log:     "stdout",
-		Address: "127.0.0.1",
-		Root:    wd,
+		BaseURL:          fbBaseURL,
+		Port:             serverPort,
+		Log:              "stdout",
+		Address:          "127.0.0.1",
+		Root:             wd,
+		ResizePreview:    false,
+		EnableThumbnails: true,
+		EnableExec:       false,
 	}
 
 	err = d.store.Settings.SaveServer(ser)
@@ -139,6 +142,7 @@ func StartBrowser(dirname string) {
 	checkError(err)
 
 	reg := &RegexpHandler{}
+	// TODO caching
 	reg.Handler(fbBaseURL, handler)
 	reg.HandleFunc("/", otherRoutes)
 	PORT := os.Getenv("PORT")
