@@ -170,7 +170,7 @@ var (
 )
 
 func (h *InterceptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if strings.HasPrefix(r.URL.Path, "/admin/static") {
+	if strings.HasPrefix(r.URL.Path, fbBaseURL+"/static") {
 		// TODO check if /admin/static then cache && forward or just forward
 		modtime := r.Header.Get("If-Modified-Since")
 		if modtime != "" {
