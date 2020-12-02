@@ -12,12 +12,15 @@ COPY --from=node /app /app
 RUN apk update
 # https://stackoverflow.com/a/58478169/8608146
 RUN apk add git gcc musl-dev build-base libc6-compat
+RUN apk add upx
 
 WORKDIR /app
 # rice assets here where we have go available
 RUN sh custom-fb.sh -r -d
 
-RUN go build --ldflags '-linkmode external'
+RUN go build
+RUN upx fate
+# RUN go build --ldflags '-linkmode external'
 RUN ls -lsh
 
 # Prepare final, minimal image

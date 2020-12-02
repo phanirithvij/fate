@@ -74,7 +74,7 @@ func quickSetup(d *pythonData) {
 	checkError(err)
 
 	// TODO arg
-	wd, err := os.Getwd()
+	cwd, err := os.Getwd()
 	checkError(err)
 
 	ser := &settings.Server{
@@ -82,7 +82,7 @@ func quickSetup(d *pythonData) {
 		Port:             serverPort,
 		Log:              "stdout",
 		Address:          "127.0.0.1",
-		Root:             wd,
+		Root:             cwd,
 		ResizePreview:    false,
 		EnableThumbnails: true,
 		EnableExec:       false,

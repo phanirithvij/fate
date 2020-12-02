@@ -70,6 +70,7 @@ Example
   - Example https://github.com/upx/upx/issues/2#issuecomment-730387507
   - `upx fate.exe --strip-relocs=0`
   - `upx -d fate.exe -o unc.exe --strip-relocs=0`
+  - `upx -9 --ultra-brute`
   - Even then diff will show different binaries
 - [ ] Documentation
   - [ ] Mention the defualt values for all things
