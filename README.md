@@ -66,12 +66,13 @@ Example
 - [ ] Add Examples and tests
   - [ ] Make the main package a test file
   - [ ] Make the main package an example file
-- [ ] UPX needs `--strip-relocs=0` for go executable uncompression to work
+- [x] UPX needs `--strip-relocs=0` for go executable uncompression to work
   - Example https://github.com/upx/upx/issues/2#issuecomment-730387507
   - `upx fate.exe --strip-relocs=0`
   - `upx -d fate.exe -o unc.exe --strip-relocs=0`
   - `upx -9 --ultra-brute`
   - Even then diff will show different binaries
+- [ ] Try [goreleaser](https://github.com/goreleaser/goreleaser)
 - [ ] Documentation
   - [ ] Mention the defualt values for all things
   - [ ] Mention it uses Sqlite or PostgreSQL and can be configured

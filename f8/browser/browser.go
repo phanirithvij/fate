@@ -1,3 +1,5 @@
+// +build browser
+
 package browser
 
 import (
