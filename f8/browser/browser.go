@@ -144,9 +144,9 @@ func StartBrowser(dirname string) {
 	checkError(err)
 
 	reg := &RegexpHandler{}
-	ihand := &InterceptHandler{handler: handler}
+	fbcHandler := &FBCache{handler: handler}
 	// TODO caching
-	reg.Handler(fbBaseURL, ihand)
+	reg.Handler(fbBaseURL, fbcHandler)
 	reg.HandleFunc("/", otherRoutes)
 	PORT := os.Getenv("PORT")
 	if PORT == "" {
@@ -157,21 +157,24 @@ func StartBrowser(dirname string) {
 	checkError(err)
 }
 
-// InterceptHandler ...
-type InterceptHandler struct {
+// https://play.golang.org/p/fpETA9_1oo
+
+// FBCache ...
+type FBCache struct {
 	handler http.Handler
 }
 
 var (
+	// server start time
 	cacheSince    = time.Now()
 	cacheSinceStr = cacheSince.Format(http.TimeFormat)
-	cacheUntil    = time.Now().AddDate(60, 0, 0)
+	cacheUntil    = cacheSince.AddDate(0, 0, 7)
 	cacheUntilStr = cacheUntil.Format(http.TimeFormat)
 )
 
-func (h *InterceptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *FBCache) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if strings.HasPrefix(r.URL.Path, fbBaseURL+"/static") {
-		// TODO check if /admin/static then cache && forward or just forward
+		// TODO check if /admin/static then cache && forward or just 304
 		modtime := r.Header.Get("If-Modified-Since")
 		if modtime != "" {
 			fmt.Println(modtime)
@@ -182,6 +185,7 @@ func (h *InterceptHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// 604800 -> one week
 		w.Header().Set("Cache-Control", "public, max-age=604800, immutable")
 		w.Header().Set("Last-Modified", cacheSinceStr)
 		w.Header().Set("Expires", cacheUntilStr)
