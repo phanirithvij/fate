@@ -49,7 +49,7 @@ func quickSetup(d *pythonData) {
 
 	fbBrandDirAbs, _ := filepath.Abs(fbBrandDir)
 	branding := settings.Branding{
-		Theme:           "dark",
+		// Theme:           "dark",
 		Name:            "IIIT Corpora FM",
 		Files:           fbBrandDirAbs,
 		DisableExternal: true,
