@@ -1,4 +1,4 @@
-// +build !browser
+// +build nobrowser
 
 package browser
 
