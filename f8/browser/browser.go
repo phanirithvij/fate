@@ -162,7 +162,7 @@ func StartBrowser(dirname string) {
 
 	reg := &RegexpHandler{}
 	fbcHandler := &FBCache{handler: handler}
-	reg.Handler(fbBaseURL, fbcHandler)
+	reg.Handle(fbBaseURL, fbcHandler)
 	reg.HandleFunc("/", otherRoutes)
 	PORT := os.Getenv("PORT")
 	if PORT == "" {

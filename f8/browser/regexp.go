@@ -15,8 +15,8 @@ type RegexpHandler struct {
 	routes []*route
 }
 
-// Handler ...
-func (h *RegexpHandler) Handler(pattern string, handler http.Handler) {
+// Handle ...
+func (h *RegexpHandler) Handle(pattern string, handler http.Handler) {
 	h.routes = append(h.routes, &route{regexp.MustCompile(pattern), handler})
 }
 
