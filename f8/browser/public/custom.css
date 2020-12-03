@@ -1,0 +1,26 @@
+:root {
+    --blue: #3eb3a6;
+    --dark-blue: #3f96a9;
+
+    --background: #000000;
+    --surfacePrimary: #202f2e;
+    --surfaceSecondary: #3a4647;
+}
+
+.button--flat.button--grey {
+    color: #fd9797;
+}
+
+.noty_theme__mint.noty_type__success {
+    background-color: #4bccb2;
+    border-bottom: 1px solid #327665;
+}
+.noty_theme__mint.noty_type__error {
+    background-color: #be3f3f;
+    border-bottom: 1px solid #00ffc0;
+}
+
+#login img {
+    width: 10em;
+    height: 7em;
+}

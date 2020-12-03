@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -26,6 +27,7 @@ import (
 const (
 	// TODO arg
 	fbBaseURL  = "/admin"
+	fbBrandDir = "./f8/browser/public"
 	fbDBPath   = "filebrowser.db"
 	serverPort = "3000"
 )
@@ -44,6 +46,24 @@ func checkError(err error) {
 func quickSetup(d *pythonData) {
 	key, err := settings.GenerateKey()
 	checkError(err)
+
+	fbBrandDirAbs, _ := filepath.Abs(fbBrandDir)
+	branding := settings.Branding{
+		Theme:           "dark",
+		Name:            "IIIT Corpora FM",
+		Files:           fbBrandDirAbs,
+		DisableExternal: true,
+	}
+
+	log.Println("Abs", fbBrandDirAbs)
+
+	// TODO arg
+	// check if branding dir exists
+	_, err = os.Stat(fbBrandDirAbs)
+	if err != nil {
+		log.Println("[Warning] Branding dir not found")
+		branding.Files = ""
+	}
 
 	set := &settings.Settings{
 		AuthMethod:    auth.MethodJSONAuth,
@@ -65,9 +85,7 @@ func quickSetup(d *pythonData) {
 				Download: true,
 			},
 		},
-		Branding: settings.Branding{
-			Theme: "dark",
-		},
+		Branding: branding,
 	}
 	err = d.store.Auth.Save(&auth.JSONAuth{})
 	checkError(err)
