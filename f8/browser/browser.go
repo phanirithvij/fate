@@ -43,7 +43,7 @@ func checkError(err error) {
 	}
 }
 
-func quickSetup(d *pythonData) {
+func quickSetup(d *pythonData, dirname string) {
 	key, err := settings.GenerateKey()
 	checkError(err)
 
@@ -65,13 +65,18 @@ func quickSetup(d *pythonData) {
 		branding.Files = ""
 	}
 
+	dirnameAbs, err := filepath.Abs(dirname)
+	if err != nil {
+		log.Fatalln("Directory", dirname, "Does not exists")
+	}
+
 	set := &settings.Settings{
 		AuthMethod:    auth.MethodJSONAuth,
 		Key:           key,
 		Signup:        true,
 		CreateUserDir: true,
 		Defaults: settings.UserDefaults{
-			Scope:       ".",
+			Scope:       dirnameAbs,
 			Locale:      "en",
 			SingleClick: false,
 			Perm: users.Permissions{
@@ -142,6 +147,7 @@ func otherRoutes(w http.ResponseWriter, req *http.Request) {
 // StartBrowser starts the filebrowser instance
 func StartBrowser(dirname string) {
 	log.SetOutput(os.Stdout)
+	log.Println("[Warning] File browsing will not work cross platform")
 	d := &pythonData{hadDB: true}
 
 	_, err := os.Stat(fbDBPath)
@@ -157,7 +163,7 @@ func StartBrowser(dirname string) {
 	checkError(err)
 
 	if !d.hadDB {
-		quickSetup(d)
+		quickSetup(d, dirname)
 	}
 
 	// TODO cache dir

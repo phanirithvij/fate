@@ -41,13 +41,10 @@ func baseHandler(w http.ResponseWriter, r *http.Request) {
 		switch slices[3] {
 		case "gif":
 			w.Header().Set("Content-Type", "image/gif")
-			break
 		case "png":
 			w.Header().Set("Content-Type", "image/png")
-			break
 		case "jpg":
 			w.Header().Set("Content-Type", "image/jpeg")
-			break
 		}
 
 		w.Write(oldButtons[slices[3]])
@@ -56,14 +53,11 @@ func baseHandler(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/":
 			http.Redirect(w, r, "https://comicrank.com", 302)
-			break
 		case "/robots.txt":
 			w.Header().Set("Content-Type", "text/plain")
 			fmt.Fprintf(w, "User-agent: *\nDisallow: /")
-			break
 		default:
 			http.NotFound(w, r)
-			break
 		}
 	}
 }
